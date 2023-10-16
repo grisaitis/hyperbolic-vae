@@ -1,3 +1,15 @@
 {
-    "python.defaultInterpreterPath": "/opt/conda/bin/python"
+    "python.defaultInterpreterPath": "/opt/conda/bin/python",
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "modifications",
+    "notebook.formatOnSave.enabled": true,
+    "notebook.formatOnCellExecution": true,
+    "editor.formatOnPaste": true,
+    "black-formatter.importStrategy": "fromEnvironment",
+    "black-formatter.args": [
+        "--config /home/jupyter/hyperbolic-vae/pyproject.toml"
+    ],
+    "ruff.lint.args": [
+        "--config=/home/jupyter/hyperbolic-vae/pyproject.toml"
+    ]
 }
