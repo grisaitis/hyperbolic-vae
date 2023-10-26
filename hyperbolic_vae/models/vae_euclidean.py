@@ -1,3 +1,4 @@
+import logging
 import pathlib
 
 import numpy as np
@@ -10,6 +11,8 @@ import torch.utils.data
 import torchvision
 from pytorch_lightning import Callback, LightningModule, Trainer
 from torch import Tensor, optim
+
+logger = logging.getLogger(__name__)
 
 
 class VAEEuclidean(nn.Module):
@@ -212,15 +215,17 @@ class VisualizeVAEEuclideanValidationSetEncodings(Callback):
     def __init__(
         self,
         path_write_image: pathlib.Path = pathlib.Path(
-            "/home/jupyter/hyperbolic_rnaseq/figures/latent_space.png"
+            "/home/jupyter/hyperbolic-vae/figures/latent_space.png"
         ),
         range_x: tuple = (-4, 4),
         range_y: tuple = (-4, 4),
+        every_n_epochs: int = 1,
     ) -> None:
         super().__init__()
         self.path_write_image = path_write_image
         self.range_x = range_x
         self.range_y = range_y
+        self.every_n_epochs = every_n_epochs
 
     def get_encodings(self, images: Tensor, vae_experiment: VAEEuclideanExperiment) -> np.ndarray:
         images = images.to(vae_experiment.device)
@@ -229,6 +234,8 @@ class VisualizeVAEEuclideanValidationSetEncodings(Callback):
         return mu.cpu().numpy()
 
     def on_train_epoch_start(self, trainer: Trainer, vae_experiment: pl.LightningModule) -> None:
+        if (trainer.current_epoch - 1) % self.every_n_epochs:
+            return
         with torch.no_grad():
             vae_experiment.eval()
             data_loader_val = trainer.datamodule.val_dataloader()

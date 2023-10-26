@@ -5,11 +5,23 @@
     "notebook.formatOnSave.enabled": true,
     "notebook.formatOnCellExecution": true,
     "editor.formatOnPaste": true,
-    "black-formatter.importStrategy": "fromEnvironment",
-    "black-formatter.args": [
-        "--config /home/jupyter/hyperbolic-vae/pyproject.toml"
-    ],
     "ruff.lint.args": [
         "--config=/home/jupyter/hyperbolic-vae/pyproject.toml"
-    ]
+    ],
+    "ruff.lint.run": "onSave",
+    "ruff.organizeImports": true,
+    "ruff.format.args": [
+        "--config=/home/jupyter/hyperbolic-vae/pyproject.toml"
+    ],
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.fixAll": true,
+            "source.organizeImports": true
+        },
+        "notebook.codeActionsOnSave": {
+            "source.fixAll": true,
+            "source.organizeImports": true
+        }
+    }
 }
