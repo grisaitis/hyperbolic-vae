@@ -1,59 +1,64 @@
-from dataclasses import dataclass
+import logging
 
 import geoopt
+import geoopt.layers.stereographic
 import geoopt.manifolds
 import numpy as np
 import pvae.distributions
 import pvae.manifolds
+
+# from pvae.distributions import WrappedNormal
+import pvae.ops.manifold_layers
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pvae.distributions import WrappedNormal
-from pvae.ops.manifold_layers import GeodesicLayer, MobiusLayer
 
 import hyperbolic_vae.manifolds
+from hyperbolic_vae.distributions.wrapped_normal import WrappedNormal
 from hyperbolic_vae.models.vae_euclidean import VisualizeVAEEuclideanValidationSetEncodings
 
+logger = logging.getLogger(__name__)
 
-# Define a data class for your function's output
-@dataclass
-class VAEHyperbolicEncoderOutput:
-    manifold: geoopt.Stereographic
-    mu_qz_x: torch.Tensor
-    log_var_qz_x: float
 
-    @property
-    def mu_qz_x_on_manifold(self) -> geoopt.ManifoldTensor:
-        return self.manifold.expmap0(self.mu_qz_x)
+# changes
+# - refactor - add decoder_first_layer_module argument to VAEHyperbolic
+# - refactor - replace using pvae.distributions.WrappedNormal with hyperbolic_vae.distributions.WrappedNormal
+# - refactor - replace hyperbolic_vae.manifolds.PoincareBallWithExtras with geoopt.PoincareBall
+# - refactor - replace VAEHyperbolicEncoderOutput with direct use of WrappedNormal
+# - change - add option for decoder_first_layer_module
+# - change - add option for encoder_last_layer_module
+# - change - add option for RelaxedBernoulli loss
 
-    @property
-    def scale_qz_x(self) -> torch.Tensor:
-        return torch.exp(0.5 * self.log_var_qz_x)
-
-    @property
-    def qz_x(self) -> WrappedNormal:
-        return WrappedNormal(self.mu_qz_x_on_manifold, self.scale_qz_x, self.manifold)
+# to change...
+# -
 
 
 class VAEHyperbolic(nn.Module):
     def __init__(
         self,
-        latent_dim: int = 2,
-        act_fn: object = nn.GELU,
-        data_channels: int = 1,
-        width: int = 32,
-        height: int = 32,
+        latent_dim: int,
+        act_fn: object,
+        data_channels: int,
+        width: int,
+        height: int,
+        encoder_last_layer_module: object,
+        decoder_first_layer_module: object,
+        manifold_curvature: float,
+        loss_recon: str,
     ):
         super().__init__()
         self.latent_dim = latent_dim
         self.data_channels = data_channels
         self.width = width
         self.height = height
+        self.encoder_last_layer_module = encoder_last_layer_module
+        self.decoder_first_layer_module = decoder_first_layer_module
+        self.loss_recon = loss_recon
         self.example_input_array = torch.zeros(torch.Size([1, data_channels, width, height]))
 
-        self.manifold = hyperbolic_vae.manifolds.PoincareBallWithExtras(c=1.0)
-        # self.manifold = geoopt.PoincareBall(c=1.0)
+        # self.manifold = hyperbolic_vae.manifolds.PoincareBallWithExtras(c=1.0)
+        self.manifold = geoopt.PoincareBall(c=manifold_curvature)
         # self.manifold = pvae.manifolds.PoincareBall(dim=latent_dim, c=1.0)
         self.encoder = nn.Sequential(
             nn.Conv2d(data_channels, 16, 3, 2, 1),
@@ -65,13 +70,36 @@ class VAEHyperbolic(nn.Module):
             nn.Flatten(),
         )
         encoder_out_channels = 32 * (width // 8) * (height // 8)
+        logger.info("encoder_out_channels: %s", encoder_out_channels)
         # self.mu = MobiusLayer(encoder_out_channels, latent_dim, self.manifold)
-        self.mu = nn.Linear(encoder_out_channels, latent_dim)
+        if encoder_last_layer_module is nn.Linear:
+            self.mu = nn.Linear(encoder_out_channels, latent_dim)
+        elif encoder_last_layer_module is pvae.ops.manifold_layers.MobiusLayer:
+            self.mu = pvae.ops.manifold_layers.MobiusLayer(encoder_out_channels, latent_dim, self.manifold)
+        else:
+            raise ValueError(f"encoder_last_layer_module {encoder_last_layer_module} not supported")
         self.log_var = nn.Linear(encoder_out_channels, latent_dim)
-        self.decoder = nn.Sequential(
-            # GeodesicLayer(latent_dim, encoder_out_channels, self.manifold),
-            # MobiusLayer(latent_dim, encoder_out_channels, self.manifold),
-            nn.Linear(latent_dim, encoder_out_channels),
+        if decoder_first_layer_module is nn.Linear:
+            decoder_first_layer = nn.Linear(latent_dim, encoder_out_channels)
+        elif decoder_first_layer_module is pvae.ops.manifold_layers.GeodesicLayer:
+            decoder_first_layer = pvae.ops.manifold_layers.GeodesicLayer(
+                latent_dim, encoder_out_channels, self.manifold
+            )
+        elif decoder_first_layer_module is pvae.ops.manifold_layers.MobiusLayer:
+            decoder_first_layer = pvae.ops.manifold_layers.MobiusLayer(
+                latent_dim, encoder_out_channels, self.manifold
+            )
+        elif decoder_first_layer_module is geoopt.layers.stereographic.Distance2StereographicHyperplanes:
+            decoder_first_layer = geoopt.layers.stereographic.Distance2StereographicHyperplanes(
+                latent_dim,
+                encoder_out_channels,
+                ball=self.manifold,
+            )
+        else:
+            raise ValueError(f"decoder_first_layer {decoder_first_layer} not supported")
+        logger.info("decoder_first_layer: %s", decoder_first_layer)
+        decoder_layers = [
+            decoder_first_layer,
             act_fn(),
             nn.Unflatten(-1, (32, width // 8, height // 8)),
             nn.ConvTranspose2d(32, 32, 3, 2, 1, output_padding=1),
@@ -83,59 +111,32 @@ class VAEHyperbolic(nn.Module):
             nn.Conv2d(16, 16, 3, 1, 1),
             act_fn(),
             nn.ConvTranspose2d(16, data_channels, 3, 2, 1, output_padding=1),
-            nn.Sigmoid(),
-        )
+            # nn.Sigmoid(),
+        ]
+        if self.loss_recon == "mse":
+            decoder_layers.append(nn.Sigmoid())
+        self.decoder = nn.Sequential(*decoder_layers)
 
     def forward(self, x: torch.Tensor) -> [torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         e = self.encoder(x)
         mu_qz_x = self.mu(e)
-        log_var_qz_x = self.log_var(e)
-        encoder_output = VAEHyperbolicEncoderOutput(self.manifold, mu_qz_x, log_var_qz_x)
-        samples_qz_x = encoder_output.qz_x.rsample(torch.Size([1])).squeeze(0)
+        if self.loss_recon == "bernoulli":
+            log_var_qz_x = torch.zeros_like(mu_qz_x)
+        else:
+            log_var_qz_x = self.log_var(e)
+        # encoder_output = VAEHyperbolicEncoderOutput(self.manifold, mu_qz_x, log_var_qz_x)
+        # samples_qz_x = encoder_output.qz_x.rsample(torch.Size([1])).squeeze(0)
+        if self.encoder_last_layer_module is nn.Linear:
+            mu_qz_x_on_manifold = self.manifold.expmap0(mu_qz_x)
+        elif self.encoder_last_layer_module is pvae.ops.manifold_layers.MobiusLayer:
+            mu_qz_x_on_manifold = mu_qz_x
+        else:
+            raise ValueError(f"encoder_last_layer_module {self.encoder_last_layer_module} not supported")
+        scale_qz_x = torch.exp(0.5 * log_var_qz_x)
+        qz_x = WrappedNormal(mu_qz_x_on_manifold, scale_qz_x, self.manifold)
+        samples_qz_x = qz_x.rsample(torch.Size([1])).squeeze(0)
         x_hat = self.decoder(samples_qz_x)
         return mu_qz_x, log_var_qz_x, samples_qz_x, x_hat
-
-    def forward_1(
-        self,
-        x: torch.Tensor,
-    ):
-        # print("x", type(x), x.shape, x[:1, :1, :1, :5])
-        e = self.encoder(x)
-        # print("e", type(e), e.shape, e[:1, :5])
-        mu, log_var = self.mu(e), self.log_var(e)
-        # print("mu", type(mu), mu.shape, mu[:5])
-        mu_on_manifold = self.manifold.expmap0(mu)  # todo - check this in pvae training code
-        # print("mu_on_manifold", type(mu_on_manifold), mu_on_manifold.shape, mu_on_manifold[:5])
-        scale = torch.exp(0.5 * log_var)
-        # print("scale", type(scale), scale.shape, scale[:5])
-        try:
-            qz_x = WrappedNormal(mu_on_manifold, scale, self.manifold)
-        except Exception as e:
-            print("x", type(x), x.shape, x[:1, :1, :1, :5])
-            # print value counts of elements of x
-            uniques, counts = x.unique(return_counts=True)
-            # top 5 values
-            top5 = torch.argsort(counts)[-5:]
-            print("top5 of x", top5)
-            print("e", type(e), e)
-            print("e info", type(e), e.shape, e[:1, :5])
-            print("mu", type(mu), mu.shape, mu[:5])
-            print("mu_on_manifold", type(mu_on_manifold), mu_on_manifold.shape, mu_on_manifold[:5])
-            print("scale", type(scale), scale.shape, scale[:5])
-            raise e
-        samples_qz_x = qz_x.rsample(torch.Size([1])).squeeze(0)
-        # print("samples_qz_x", type(samples_qz_x), samples_qz_x.shape, samples_qz_x[:5])
-        samples_qz_x = self.manifold.logmap0(samples_qz_x)
-        # print("samples_qz_x, logmap0 from manifold", type(samples_qz_x), samples_qz_x.shape)
-        x_hat = self.decoder(samples_qz_x)
-        # print("x_hat", x_hat.shape)
-        # return mu, log_var, z, x_hat
-        # px_z = torch.distributions.RelaxedBernoulli(
-        #     temperature=torch.tensor([0.1], device=x_hat.device),
-        #     logits=x_hat,
-        #     # validate_args=False,
-        # )
-        return mu, log_var, mu_on_manifold, scale, samples_qz_x, x_hat
 
     def init_last_layer_bias(self, train_loader: torch.utils.data.DataLoader):
         if not hasattr(self.decoder.last_op, "bias"):
@@ -170,12 +171,26 @@ class VAEHyperbolicExperiment(pl.LightningModule):
         beta: float = 1.0,
         lr: float = 1e-3,
         manifold_curvature: float = 1.0,
+        encoder_last_layer_module: object = nn.Linear,
+        decoder_first_layer_module: object = nn.Linear,
+        loss_recon: str = "mse",
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.vae = VAEHyperbolic(latent_dim, act_fn, data_channels, width, height)
+        self.vae = VAEHyperbolic(
+            latent_dim,
+            act_fn,
+            data_channels,
+            width,
+            height,
+            encoder_last_layer_module,
+            decoder_first_layer_module,
+            manifold_curvature,
+            loss_recon,
+        )
         self.beta = beta
         self.lr = lr
+        self.loss_recon = loss_recon
         self.example_input_array = torch.zeros(torch.Size([1, data_channels, width, height]))
 
     def forward(self, x):
@@ -186,15 +201,20 @@ class VAEHyperbolicExperiment(pl.LightningModule):
         BATCH_SHAPE = x.size()[0:1]
         # print(BATCH_SHAPE)
         EVENT_SHAPE = torch.Size([self.vae.latent_dim])
-        # qz_x, z, x_hat = self.vae.forward(x)
-        mu_pz_x, log_var_pz_x, z, x_hat = self.vae.forward(x)
-        encoder_output = VAEHyperbolicEncoderOutput(self.vae.manifold, mu_pz_x, log_var_pz_x)
+        mu_qz_x, log_var_qz_x, z, x_hat = self.vae.forward(x)
+        # encoder_output = VAEHyperbolicEncoderOutput(self.vae.manifold, mu_pz_x, log_var_pz_x)
         assert z.shape == BATCH_SHAPE + EVENT_SHAPE, z.shape
-        qz_x = encoder_output.qz_x
+        # qz_x = encoder_output.qz_x
+        if self.vae.encoder_last_layer_module is nn.Linear:
+            mu_qz_x_on_manifold = self.vae.manifold.expmap0(mu_qz_x)
+        elif self.vae.encoder_last_layer_module is pvae.ops.manifold_layers.MobiusLayer:
+            mu_qz_x_on_manifold = mu_qz_x
+        scale_qz_x = torch.exp(0.5 * log_var_qz_x)
+        qz_x = WrappedNormal(mu_qz_x_on_manifold, scale_qz_x, self.vae.manifold)
         assert qz_x.batch_shape == BATCH_SHAPE, qz_x.batch_shape
         assert qz_x.event_shape == EVENT_SHAPE, qz_x.event_shape
         manifold_origin = self.vae.manifold.origin(EVENT_SHAPE, device=z.device)
-        pz = pvae.distributions.WrappedNormal(
+        pz = WrappedNormal(
             manifold_origin,
             torch.ones_like(manifold_origin),
             self.vae.manifold,
@@ -217,7 +237,18 @@ class VAEHyperbolicExperiment(pl.LightningModule):
         assert log_prob_qz_x.shape == torch.Size([1, *BATCH_SHAPE, 1])
         loss_kl = (log_prob_qz_x - log_prob_pz).sum()
         # print("loss_kl", type(loss_kl), loss_kl.shape)
-        loss_recon = nn.functional.mse_loss(x_hat, x, reduction="sum")
+        if self.loss_recon == "mse":
+            loss_recon = nn.functional.mse_loss(x_hat, x, reduction="sum")
+        elif self.loss_recon == "bernoulli":
+            x_hat_flattened = x_hat.flatten(start_dim=1)
+            x_flattened = x.flatten(start_dim=1)
+            assert (
+                x_hat_flattened.shape == x_flattened.shape
+            ), f"{x_hat_flattened.shape} != {x_flattened.shape}"
+            qx_z = torch.distributions.RelaxedBernoulli(temperature=torch.tensor(0.1), logits=x_hat_flattened)
+            loss_recon = -qx_z.log_prob(x_flattened).mean()
+        else:
+            raise ValueError(f"loss_recon {self.loss_recon} not supported")
         # print("loss_recon", type(loss_recon), loss_recon.shape)
         return {
             "loss_total": loss_recon + self.beta * loss_kl,

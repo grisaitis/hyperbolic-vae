@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import pytorch_lightning as pl
 import torch
@@ -21,7 +22,7 @@ def train_latent_dim(latent_dim: int = 64):
         latent_dim=latent_dim,
         width=32,
         height=32,
-        beta=10.0,
+        beta=1.0,
         lr=1e-3,
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -35,7 +36,11 @@ def train_latent_dim(latent_dim: int = 64):
             GenerateCallback.from_data_module(mnist_data_module, every_n_epochs=1),
             LearningRateMonitor("epoch"),
             VisualizeVAEEuclideanLatentSpace(range_start=-4, range_end=4, steps=40),
-            VisualizeVAEEuclideanValidationSetEncodings(),
+            VisualizeVAEEuclideanValidationSetEncodings(
+                path_write_image=pathlib.Path(
+                    "/home/jupyter/hyperbolic-vae/figures/latent_space_euclidean.png"
+                ),
+            ),
         ],
     )
     trainer.logger._log_graph = True
@@ -49,5 +54,3 @@ def train_latent_dim(latent_dim: int = 64):
 if __name__ == "__main__":
     pl.seed_everything(42)
     train_latent_dim(2)
-    # for latent_dim in [64, 2, 128, 256, 384]:
-    # train_latent_dim(latent_dim)
