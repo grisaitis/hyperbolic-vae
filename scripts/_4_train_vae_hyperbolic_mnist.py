@@ -5,13 +5,13 @@ import torch
 import torch.optim as optim
 
 from hyperbolic_vae.data.mnist_v2 import mnist_data_module
-from hyperbolic_vae.models.vae_hyperbolic_linear_wrapped import VAEHyperbolic
+from hyperbolic_vae.models.vae_hyperbolic_linear_wrapped import ImageVAEHyperbolic
 from hyperbolic_vae.training.old_pvae_train import train
 
 if __name__ == "__main__":
     pl.seed_everything(42)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = VAEHyperbolic().to(device)
+    model = ImageVAEHyperbolic().to(device)
     agg = defaultdict(list)
     train_loader = mnist_data_module.train_dataloader()
     optimizer = optim.Adam(

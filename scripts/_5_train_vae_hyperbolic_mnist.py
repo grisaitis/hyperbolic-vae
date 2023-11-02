@@ -2,12 +2,12 @@ import logging
 import os
 import pathlib
 
+import pvae.ops.manifold_layers
 import pytorch_lightning as pl
 import torch
-from torch import nn
 from geoopt.layers.stereographic import Distance2StereographicHyperplanes
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
-import pvae.ops.manifold_layers
+from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor, ModelCheckpoint
+from torch import nn
 
 from hyperbolic_vae.config import CHECKPOINTS_PATH
 from hyperbolic_vae.data.mnist_v2 import mnist_data_module
@@ -20,20 +20,20 @@ from hyperbolic_vae.util import ColoredFormatter
 
 
 def train_latent_dim(latent_dim: int = 64):
+    curvature = 1.4
     vae_experiment = VAEHyperbolicExperiment(
+        image_shape=(1, 32, 32),
         latent_dim=latent_dim,
-        data_channels=1,
-        width=32,
-        height=32,
+        manifold_curvature=curvature,
+        encoder_last_layer_module="pvae_mobius",
+        decoder_first_layer_module="geoopt_gyroplane",
         beta=1.0,
         lr=1e-3,
-        encoder_last_layer_module=pvae.ops.manifold_layers.MobiusLayer,
-        decoder_first_layer_module=Distance2StereographicHyperplanes,
-        loss_recon="bernoulli",
+        loss_recon="mse",
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     trainer = pl.Trainer(
-        default_root_dir=os.path.join(CHECKPOINTS_PATH, f"mnist_poincare_{latent_dim}"),
+        default_root_dir=os.path.join(CHECKPOINTS_PATH, "mnist"),
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         devices=1,
         max_epochs=300,
@@ -42,12 +42,10 @@ def train_latent_dim(latent_dim: int = 64):
             GenerateCallback.from_data_module(mnist_data_module, every_n_epochs=1),
             LearningRateMonitor("epoch"),
             VisualizeVAEPoincareDiskValidationSetEncodings(
-                path_write_image=pathlib.Path(
-                    "/home/jupyter/hyperbolic-vae/figures/latent_space_poincare_2_encmobius_decgyroplane_lossbernoulli.png"
-                ),
-                range_x=(-1, 1),
-                range_y=(-1, 1),
+                range_x=(-curvature**-0.5, curvature**-0.5),
+                range_y=(-curvature**-0.5, curvature**-0.5),
             ),
+            EarlyStopping("val/loss_total", patience=10, verbose=True),
         ],
     )
     trainer.logger._log_graph = True
