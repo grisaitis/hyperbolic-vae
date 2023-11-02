@@ -4,11 +4,11 @@ from pvae.utils import has_analytic_kl, probe_infnan
 from torch import optim
 from torch.utils.data import DataLoader
 
-from hyperbolic_vae.models.vae_hyperbolic_linear_wrapped import VAEHyperbolic
+from hyperbolic_vae.models.vae_hyperbolic_linear_wrapped import ImageVAEHyperbolic
 
 
 def loss_function(
-    model: VAEHyperbolic,
+    model: ImageVAEHyperbolic,
     x: torch.Tensor,
     K: int = 1,
     beta: float = 1.0,

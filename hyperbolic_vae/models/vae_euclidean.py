@@ -1,9 +1,12 @@
+import io
 import logging
 import pathlib
 
+import imageio.v3 as iio
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
@@ -214,24 +217,16 @@ class VisualizeVAEEuclideanLatentSpace(Callback):
 class VisualizeVAEEuclideanValidationSetEncodings(Callback):
     def __init__(
         self,
-        path_write_image: pathlib.Path = pathlib.Path(
-            "/home/jupyter/hyperbolic-vae/figures/latent_space.png"
-        ),
         range_x: tuple = (-4, 4),
         range_y: tuple = (-4, 4),
         every_n_epochs: int = 1,
+        path_write_image: pathlib.Path = None,
     ) -> None:
         super().__init__()
-        self.path_write_image = path_write_image
         self.range_x = range_x
         self.range_y = range_y
         self.every_n_epochs = every_n_epochs
-
-    def get_encodings(self, images: Tensor, vae_experiment: VAEEuclideanExperiment) -> np.ndarray:
-        images = images.to(vae_experiment.device)
-        e = vae_experiment.vae.encoder(images)
-        mu = vae_experiment.vae.mu(e)
-        return mu.cpu().numpy()
+        self.path_write_image = path_write_image
 
     def on_train_epoch_start(self, trainer: Trainer, vae_experiment: pl.LightningModule) -> None:
         if (trainer.current_epoch - 1) % self.every_n_epochs:
@@ -240,46 +235,56 @@ class VisualizeVAEEuclideanValidationSetEncodings(Callback):
             vae_experiment.eval()
             data_loader_val = trainer.datamodule.val_dataloader()
             # compute encodings for validation set
-            df = pd.DataFrame(columns=["i_batch", "mu_0", "mu_1"])
-            for i, batch in enumerate(data_loader_val):
-                images, labels = batch
-                mu = self.get_encodings(images, vae_experiment)
-                df_batch = pd.DataFrame({"label": labels, "mu_0": mu[:, 0], "mu_1": mu[:, 1]})
-                df = pd.concat([df, df_batch], ignore_index=True)
+            df = self.get_encodings_as_dataframe(vae_experiment, data_loader_val)
             # scatter plot, (-5, 5) x (-5, 5), color by label, legend outside on the right
-            fig = px.scatter(
-                df.astype({"label": "int"}).astype({"label": "str"}).sort_values(by="label"),
-                x="mu_0",
-                y="mu_1",
-                color="label",
-                text="label",
-                range_x=self.range_x,
-                range_y=self.range_y,
-                title="Latent space encoding of validation set",
-                # color_discrete_sequence=px.colors.sequential.Plasma_r,
+            fig = self.create_plotly_figure(df)
+            if self.path_write_image:
+                fig.write_image(self.path_write_image, scale=2)
+            buf = io.BytesIO()
+            fig.write_image(
+                buf,
+                engine="kaleido",
+                format="png",
+                scale=2,
             )
-            fig.update_traces(mode="text")
-            fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color))
-            fig.update_layout(width=600, height=500)
-            # fig.update_layout(legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
-            # fig.for_each_trace(lambda t: t.update(mode="markers+text"))
-            # fig.for_each_trace(lambda t: t.update(textfont_color="black", textposition="top center"))
-            fig.write_image(self.path_write_image, scale=2)
-            # fig2 = go.Figure()
-            # fig2.add_trace(
-            #     go.Scatter(
-            #         x=df["mu_0"],
-            #         y=df["mu_1"],
-            #         mode="text",
-            #         text=df["label"],
-            #         textposition="middle center",
-            #         textfont_size=8,
-            #     )
-            # )
-            # fig_bytes = fig.to_image(format="png", scale=2)
-            # buf = io.BytesIO(fig_bytes)
-            # img = Image.open(buf)
-            # trainer.logger.experiment.add_image(
-            #     "latent_space", np.asarray(img), global_step=trainer.global_step
-            # )
+            buf.seek(0)
+            image_array = iio.imread(buf)
+            image_array = image_array.transpose(2, 0, 1)
+            str_title = f"{vae_experiment.__class__.__name__}_latent_space"
+            trainer.logger.experiment.add_image(str_title, image_array, global_step=trainer.global_step)
         vae_experiment.train()
+
+    def create_plotly_figure(self, df: pd.DataFrame) -> go.Figure:
+        fig = px.scatter(
+            df.astype({"label": "int"}).astype({"label": "str"}).sort_values(by="label"),
+            x="mu_0",
+            y="mu_1",
+            color="label",
+            text="label",
+            range_x=self.range_x,
+            range_y=self.range_y,
+            title="Latent space encoding of validation set",
+            # color_discrete_sequence=px.colors.sequential.Plasma_r,
+        )
+        fig.update_traces(mode="text")
+        fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color))
+        fig.update_layout(width=600, height=600)
+        # fig.update_layout(legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
+        # fig.for_each_trace(lambda t: t.update(mode="markers+text"))
+        # fig.for_each_trace(lambda t: t.update(textfont_color="black", textposition="top center"))
+        return fig
+
+    def get_encodings(self, images: Tensor, vae_experiment: VAEEuclideanExperiment) -> np.ndarray:
+        images = images.to(vae_experiment.device)
+        e = vae_experiment.vae.encoder(images)
+        mu = vae_experiment.vae.mu(e)
+        return mu.cpu().numpy()
+
+    def get_encodings_as_dataframe(self, vae_experiment, data_loader_val):
+        df = pd.DataFrame(columns=["i_batch", "mu_0", "mu_1"])
+        for i, batch in enumerate(data_loader_val):
+            images, labels = batch
+            mu = self.get_encodings(images, vae_experiment)
+            df_batch = pd.DataFrame({"label": labels, "mu_0": mu[:, 0], "mu_1": mu[:, 1]})
+            df = pd.concat([df, df_batch], ignore_index=True)
+        return df
