@@ -16,44 +16,21 @@ from hyperbolic_vae.models.vae_hyperbolic_linear_wrapped import (
     VisualizeVAEPoincareDiskValidationSetEncodings,
 )
 from hyperbolic_vae.training.generate_callback import GenerateCallback
+from hyperbolic_vae.training.trainer_mnist import make_trainer_hyperbolic
 from hyperbolic_vae.util import ColoredFormatter
 
+vae_experiment = VAEHyperbolicExperiment(
+    image_shape=(1, 32, 32),
+    latent_dim=2,
+    manifold_curvature=1.4,
+    encoder_last_layer_module="pvae_mobius",
+    decoder_first_layer_module="geoopt_gyroplane",
+    beta=1.0,
+    lr=1e-3,
+    loss_recon="mse",
+)
 
-def train_latent_dim(latent_dim: int = 64):
-    curvature = 1.4
-    vae_experiment = VAEHyperbolicExperiment(
-        image_shape=(1, 32, 32),
-        latent_dim=latent_dim,
-        manifold_curvature=curvature,
-        encoder_last_layer_module="pvae_mobius",
-        decoder_first_layer_module="geoopt_gyroplane",
-        beta=1.0,
-        lr=1e-3,
-        loss_recon="mse",
-    )
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    trainer = pl.Trainer(
-        default_root_dir=os.path.join(CHECKPOINTS_PATH, "mnist"),
-        accelerator="gpu" if str(device).startswith("cuda") else "cpu",
-        devices=1,
-        max_epochs=300,
-        callbacks=[
-            ModelCheckpoint(save_weights_only=True),
-            GenerateCallback.from_data_module(mnist_data_module, every_n_epochs=1),
-            LearningRateMonitor("epoch"),
-            VisualizeVAEPoincareDiskValidationSetEncodings(
-                range_x=(-curvature**-0.5, curvature**-0.5),
-                range_y=(-curvature**-0.5, curvature**-0.5),
-            ),
-            EarlyStopping("val/loss_total", patience=10, verbose=True),
-        ],
-    )
-    trainer.logger._log_graph = True
-    trainer.logger._default_hp_metric = None
-    trainer.fit(
-        vae_experiment,
-        mnist_data_module,
-    )
+trainer = make_trainer_hyperbolic(vae_experiment.manifold_curvature)
 
 
 if __name__ == "__main__":
@@ -62,8 +39,10 @@ if __name__ == "__main__":
     sh = logging.StreamHandler()
     sh.setFormatter(ColoredFormatter("%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s"))
     logging.getLogger().addHandler(sh)
+
     pl.seed_everything(42)
     with torch.autograd.detect_anomaly(check_nan=True):
-        train_latent_dim(2)
-    # for latent_dim in [64, 2, 128, 256, 384]:
-    # train_latent_dim(latent_dim)
+        trainer.fit(
+            vae_experiment,
+            mnist_data_module,
+        )
