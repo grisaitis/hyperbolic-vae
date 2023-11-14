@@ -175,6 +175,7 @@ class VAEHyperbolicExperiment(pl.LightningModule):
         self.lr = lr
         self.loss_recon = loss_recon
         self.example_input_array = torch.zeros(1, *image_shape)
+        self.test_step_outputs = []
 
     def forward(self, x):
         return self.model(x)
@@ -274,19 +275,22 @@ class VAEHyperbolicExperiment(pl.LightningModule):
             _, _, _, x_hat = self(x)
             loss_dict["mse"] = nn.functional.mse_loss(x_hat, x, reduction="sum")
         self.log_dict({f"test/{k}": v for k, v in loss_dict.items()})
+        self.test_step_outputs.append(loss_dict)
         return loss_dict
 
-    def test_epoch_end(self, outputs):
+    def on_test_epoch_end(self):
         # 'outputs' is a list of dictionaries returned from test_step for each batch
         # Compute the mean or aggregate metric over all batches
-        avg_loss = torch.stack([x['loss_total'] for x in outputs]).mean()
-        avg_mse = torch.stack([x['mse'] for x in outputs]).mean()
-        self.log('avg_test_mse', avg_mse)
-        return {'avg_test_loss': avg_loss, 'avg_test_mse': avg_mse}
+        outputs = self.test_step_outputs
+        avg_loss = torch.stack([x["loss_total"] for x in outputs]).mean()
+        avg_mse = torch.stack([x["mse"] for x in outputs]).mean()
+        self.log("avg_test_mse", avg_mse)
+        self.test_step_outputs.clear()
+        return {"avg_test_loss": avg_loss, "avg_test_mse": avg_mse}
 
     def on_fit_start(self):
         # self.logger.experiment.add_hparams(hparam_dict=dict(vae_experiment.hparams), metric_dict={"val/accuracy": 0, "val/loss": 1})
-        metric_placeholder = {'avg_test_mse': 0, 'avg_test_loss': 1}
+        metric_placeholder = {"avg_test_mse": 0, "avg_test_loss": 1}
         self.logger.log_hyperparams(self.hparams, metrics=metric_placeholder)
 
 
