@@ -162,6 +162,11 @@ class VAEHyperbolicExperiment(pl.LightningModule):
             "lr",
             "loss_recon",
         )
+        self.image_shape = image_shape
+        self.latent_dim = latent_dim
+        self.manifold_curvature = manifold_curvature
+        self.encoder_last_layer_module = encoder_last_layer_module
+        self.decoder_first_layer_module = decoder_first_layer_module
         self.model = ImageVAEHyperbolic(
             latent_dim,
             nn.GELU,
