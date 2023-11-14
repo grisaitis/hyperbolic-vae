@@ -12,7 +12,7 @@ from hyperbolic_vae.models.vae_hyperbolic_gyroplane_decoder import (
     VAEHyperbolicGyroplaneDecoder,
     VisualizeEncodingsValidationSet,
 )
-from hyperbolic_vae.models.vae_hyperbolic_linear_wrapped import VisualizeVAEPoincareDiskValidationSetEncodings
+from hyperbolic_vae.models.vae_hyperbolic import VisualizeVAEPoincareDiskValidationSetEncodings
 from hyperbolic_vae.training.generate_callback import GenerateCallback
 from hyperbolic_vae.util import ColoredFormatter
 
