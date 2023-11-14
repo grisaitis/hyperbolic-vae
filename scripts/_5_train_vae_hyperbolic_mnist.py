@@ -11,7 +11,7 @@ from torch import nn
 
 from hyperbolic_vae.config import CHECKPOINTS_PATH
 from hyperbolic_vae.data.mnist_v2 import mnist_data_module
-from hyperbolic_vae.models.vae_hyperbolic_linear_wrapped import (
+from hyperbolic_vae.models.vae_hyperbolic import (
     VAEHyperbolicExperiment,
     VisualizeVAEPoincareDiskValidationSetEncodings,
 )

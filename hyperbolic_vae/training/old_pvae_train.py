@@ -4,7 +4,7 @@ from pvae.utils import has_analytic_kl, probe_infnan
 from torch import optim
 from torch.utils.data import DataLoader
 
-from hyperbolic_vae.models.vae_hyperbolic_linear_wrapped import ImageVAEHyperbolic
+from hyperbolic_vae.models.vae_hyperbolic import ImageVAEHyperbolic
 
 
 def loss_function(
