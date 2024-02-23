@@ -308,3 +308,4 @@ rsconnect/
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/r,text,macos,nohup,python,jupyternotebooks,visualstudiocode
+poetry.lock
