@@ -14,7 +14,7 @@ from hyperbolic_vae.training.generate_callback import GenerateCallback
 def make_trainer_hyperbolic(curvature: float) -> pl.Trainer:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     trainer = pl.Trainer(
-        default_root_dir=os.path.join(CHECKPOINTS_PATH, "mnist"),
+        default_root_dir=os.path.join(CHECKPOINTS_PATH, "mnist_hyperbolic"),
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         devices=1,
         max_epochs=300,

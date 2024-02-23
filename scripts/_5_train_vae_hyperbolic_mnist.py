@@ -40,9 +40,15 @@ if __name__ == "__main__":
     sh.setFormatter(ColoredFormatter("%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s"))
     logging.getLogger().addHandler(sh)
 
-    pl.seed_everything(42)
-    with torch.autograd.detect_anomaly(check_nan=True):
-        trainer.fit(
-            vae_experiment,
-            mnist_data_module,
+    # pl.seed_everything(42)
+    curvatures = [0.2, 0.5, 1.0, 2.0, 5.0]
+    betas = [0.5, 1.0, 5.0]
+    latent_dims = [2, 5, 10]
+    combinations = itertools.product(curvatures, betas, latent_dims)
+    for curvature, beta, latent_dim in combinations:
+        with torch.autograd.detect_anomaly(check_nan=True):
+            trainer.fit(vae_experiment, mnist_data_module)
+        best_vae_experiment = VAEHyperbolicExperiment.load_from_checkpoint(
+            trainer.checkpoint_callback.best_model_path
         )
+        trainer.test(best_vae_experiment, mnist_data_module)
