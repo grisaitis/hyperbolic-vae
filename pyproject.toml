@@ -22,13 +22,16 @@ scikit-image = "^0.21"
 scipy = "^1.11"
 tqdm = "^4.66"
 torch-adata = "0.0.24"
+universal_pathlib = "0.2.1"
+fsspec = "2023.6.0"
 # geoopt = { git = "https://github.com/geoopt/geoopt.git", rev = "a41c09b7" } # as of august 2023
 # pvae = { path = "../pvae", develop = true }
 
 [tool.poetry.dev-dependencies]
 black = "^21.9"
-ruff = "^0.2"
+ruff = "^0.3"
 isort = "^5.9"
+pytest = "*"
 
 [tool.black]
 line-length = 110
