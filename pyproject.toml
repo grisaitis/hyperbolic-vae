@@ -52,8 +52,8 @@ extend-exclude = '''
 [tool.ruff]
 target-version = "py310"
 fix = true
-ignore-init-module-imports = true
 line-length = 120
-unfixable = ["F401"]
-ignore = ["F401"]
 respect-gitignore = true
+lint.ignore = ["F401"]
+lint.ignore-init-module-imports = true
+lint.unfixable = ["F401"]
