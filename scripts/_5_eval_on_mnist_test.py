@@ -2,7 +2,7 @@ from pathlib import Path
 
 from _5_train_vae_hyperbolic_mnist import trainer, vae_experiment
 
-from hyperbolic_vae.data.mnist_v2 import mnist_data_module
+from hyperbolic_vae.datasets.mnist_v2 import mnist_data_module
 
 lightning_logs = Path("/home/jupyter/hyperbolic-vae/checkpoints/mnist/lightning_logs")
 versions = lightning_logs.glob("version_*")

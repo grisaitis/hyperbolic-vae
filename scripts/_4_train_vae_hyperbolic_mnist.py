@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 import torch
 import torch.optim as optim
 
-from hyperbolic_vae.data.mnist_v2 import mnist_data_module
+from hyperbolic_vae.datasets.mnist_v2 import mnist_data_module
 from hyperbolic_vae.models.vae_hyperbolic import ImageVAEHyperbolic
 from hyperbolic_vae.training.old_pvae_train import train
 
