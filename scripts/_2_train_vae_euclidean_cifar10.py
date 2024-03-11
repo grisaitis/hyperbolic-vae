@@ -26,7 +26,7 @@ import torch
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
 from hyperbolic_vae.config import CHECKPOINTS_PATH
-from hyperbolic_vae.data.cifar10_v2 import cifar10_data_module
+from hyperbolic_vae.datasets.cifar10_v2 import cifar10_data_module
 from hyperbolic_vae.models.vae_euclidean import VAEEuclideanExperiment, VisualizeVAEEuclideanLatentSpace
 from hyperbolic_vae.training.generate_callback import GenerateCallback
 

@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
-from hyperbolic_vae.data.cifar10_v1 import get_train_images, test_loader, train_loader, val_loader
+from hyperbolic_vae.datasets.cifar10_v1 import get_train_images, test_loader, train_loader, val_loader
 from hyperbolic_vae.models.autoencoder_nonvariational import Autoencoder
 from hyperbolic_vae.training.generate_callback import GenerateCallback
 

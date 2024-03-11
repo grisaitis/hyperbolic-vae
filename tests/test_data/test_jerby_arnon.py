@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-from hyperbolic_vae.data.jerby_arnon import (
+from hyperbolic_vae.datasets.jerby_arnon import (
     ANNOTATIONS_CSV_GZ_URL,
     JerbyArnonCSVDataModule,
     _download_and_extract_csv_gz,
