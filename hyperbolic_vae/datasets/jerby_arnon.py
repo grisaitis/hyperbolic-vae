@@ -73,8 +73,8 @@ class RNASeqAnnotatedDataset(Dataset):
 
     def __getitem__(self, idx):
         return {
-            "rnaseq": torch.tensor(self.df_rnqseq[idx], dtype=torch.float),
-            "annotations": torch.tensor(self.df_annotations[idx], dtype=torch.float),
+            "rnaseq": torch.tensor(self.df_rnqseq.iloc[idx], dtype=torch.float),
+            "cell_type_series": self.df_annotations[columns.CELL_TYPE].iloc[idx],
         }
 
 
