@@ -10,9 +10,9 @@ authors = ["William Grisaitis <wgrisaitis@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-torch = "^2"
+torch = "2.2"
 pytorch-lightning = "^2"
-torchvision = "*"
+torchvision = "0.17"
 numpy = "^1.23"
 pandas = "^2"
 matplotlib = "^3.7"
