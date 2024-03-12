@@ -1,11 +1,15 @@
 import tempfile
 from pathlib import Path
 
-from hyperbolic_vae.datasets.jerby_arnon import (
-    ANNOTATIONS_CSV_GZ_URL,
-    JerbyArnonCSVDataModule,
-    _download_and_extract_csv_gz,
-)
+from hyperbolic_vae.datasets.jerby_arnon import ANNOTATIONS_CSV_GZ_URL, get_pytorch_dataset
+from hyperbolic_vae.datasets.jerby_arnon_other import JerbyArnonCSVDataModule, _download_and_extract_csv_gz
+
+
+def test_get_pytorch_dataset():
+    dataset = get_pytorch_dataset()
+    print(dataset[0]["rnaseq"].shape)
+    print(dataset[0]["cell_type_series"])
+    assert len(dataset) > 0
 
 
 def test_download_and_extract_csv_gz():

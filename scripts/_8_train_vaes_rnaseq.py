@@ -24,7 +24,7 @@ def train(
     latent_dim: int,
     batch_size: int,
 ):
-    input_data_shape = dataset[0][0].shape
+    input_data_shape = dataset[0]["rnaseq"].shape
     logger.info(f"input_data_shape from dataset: {input_data_shape}")
     train_size = int(0.7 * len(dataset))
     val_size = int(0.15 * len(dataset))
