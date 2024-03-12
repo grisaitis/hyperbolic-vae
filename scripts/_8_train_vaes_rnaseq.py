@@ -2,6 +2,7 @@ import logging
 import os
 from pathlib import Path
 
+import geoopt
 import pandas as pd
 import pytorch_lightning as pl
 import torch
@@ -20,9 +21,12 @@ logger = logging.getLogger(__name__)
 
 def train(
     dataset: Dataset,
-    manifold_curvature: float,
-    latent_dim: int,
     batch_size: int,
+    latent_dim: int,
+    manifold_curvature: float,
+    hidden_layer_dim: int,
+    learning_rate: float,
+    beta: float,
 ):
     input_data_shape = dataset[0]["rnaseq"].shape
     logger.info(f"input_data_shape from dataset: {input_data_shape}")
@@ -40,11 +44,12 @@ def train(
         num_workers=0,
     )
     vae = VAEHyperbolicRNASeq(
-        data_shape=input_data_shape,
+        input_data_shape=input_data_shape,
         latent_dim=latent_dim,
         manifold_curvature=manifold_curvature,
-        beta=1.0,
-        lr=1e-3,
+        hidden_layer_dim=hidden_layer_dim,
+        learning_rate=learning_rate,
+        beta=beta,
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     trainer = pl.Trainer(
@@ -82,5 +87,10 @@ if __name__ == "__main__":
     jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset()
     train(
         dataset=jerby_arnon_dataset,
+        batch_size=64,
+        latent_dim=2,
         manifold_curvature=1.0,
+        hidden_layer_dim=16,
+        learning_rate=1e-3,
+        beta=1.0,
     )
