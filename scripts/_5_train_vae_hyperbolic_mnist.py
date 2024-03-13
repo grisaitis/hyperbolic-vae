@@ -3,7 +3,6 @@ import logging
 import os
 import pathlib
 
-import pvae.ops.manifold_layers
 import pytorch_lightning as pl
 import torch
 from geoopt.layers.stereographic import Distance2StereographicHyperplanes
@@ -12,10 +11,7 @@ from torch import nn
 
 from hyperbolic_vae.config import CHECKPOINTS_PATH
 from hyperbolic_vae.datasets.mnist_v2 import mnist_data_module
-from hyperbolic_vae.models.vae_hyperbolic import (
-    VAEHyperbolicExperiment,
-    VisualizeVAEPoincareDiskValidationSetEncodings,
-)
+from hyperbolic_vae.models.vae_hyperbolic import VAEHyperbolicExperiment, VisualizeVAEPoincareDiskValidationSetEncodings
 from hyperbolic_vae.training.generate_callback import GenerateCallback
 from hyperbolic_vae.training.trainer_mnist import make_trainer_hyperbolic
 from hyperbolic_vae.util import ColoredFormatter
@@ -42,9 +38,12 @@ if __name__ == "__main__":
     logging.getLogger().addHandler(sh)
 
     # pl.seed_everything(42)
-    curvatures = [0.2, 0.5, 1.0, 2.0, 5.0]
-    betas = [0.5, 1.0, 5.0]
-    latent_dims = [2, 5, 10]
+    # curvatures = [0.2, 0.5, 1.0, 2.0, 5.0]
+    # betas = [0.5, 1.0, 5.0]
+    # latent_dims = [2, 5, 10]
+    curvatures = [1.0]
+    betas = [1.0]
+    latent_dims = [2]
     combinations = itertools.product(curvatures, betas, latent_dims)
     for curvature, beta, latent_dim in combinations:
         with torch.autograd.detect_anomaly(check_nan=True):
