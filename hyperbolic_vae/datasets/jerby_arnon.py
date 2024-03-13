@@ -65,7 +65,7 @@ class RNASeqAnnotatedDataset(Dataset):
         assert df_rnaseq.columns.name == columns.GENE_SYMBOL
         assert df_annotations.index.name == columns.SINGLE_CELL_ID
         assert df_rnaseq.index.equals(df_annotations.index)
-        self.df_rnqseq = df_rnaseq
+        self.df_rnaseq = df_rnaseq
         self.df_annotations = df_annotations
 
     def __len__(self):
@@ -73,7 +73,7 @@ class RNASeqAnnotatedDataset(Dataset):
 
     def __getitem__(self, idx):
         return {
-            "rnaseq": torch.tensor(self.df_rnqseq.iloc[idx], dtype=torch.float),
+            "rnaseq": torch.tensor(self.df_rnaseq.iloc[idx], dtype=torch.float),
             "cell_type_series": self.df_annotations[columns.CELL_TYPE].iloc[idx],
         }
 
