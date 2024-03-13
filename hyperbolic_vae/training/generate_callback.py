@@ -10,9 +10,7 @@ class GenerateCallback(pl.Callback):
         self.every_n_epochs = every_n_epochs
 
     @classmethod
-    def from_data_module(
-        cls, data_module: pl.LightningDataModule, n_images: int = 8, every_n_epochs: int = 1
-    ):
+    def from_data_module(cls, data_module: pl.LightningDataModule, n_images: int = 8, every_n_epochs: int = 1):
         dataset_train = data_module.train_dataloader().dataset
         images = torch.stack([dataset_train[i][0] for i in range(n_images)], dim=0)
         return cls(images, every_n_epochs=every_n_epochs)

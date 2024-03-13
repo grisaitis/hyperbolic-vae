@@ -2,6 +2,7 @@
 import torch
 import torch.utils.data as data
 from torchvision import transforms
+
 # Torchvision
 from torchvision.datasets import MNIST
 

@@ -5,7 +5,7 @@ import geoopt.layers.stereographic
 import numpy as np
 
 # import pvae.ops.manifold_layers
-import pvae.distributions
+# import pvae.distributions
 import pytorch_lightning as pl
 import torch
 
@@ -189,9 +189,7 @@ class VAEHyperbolicGyroplaneDecoder(pl.LightningModule):
 
 
 class VisualizeEncodingsValidationSet(VisualizeVAEEuclideanValidationSetEncodings):
-    def get_encodings(
-        self, images: torch.Tensor, vae_experiment: VAEHyperbolicGyroplaneDecoder
-    ) -> np.ndarray:
+    def get_encodings(self, images: torch.Tensor, vae_experiment: VAEHyperbolicGyroplaneDecoder) -> np.ndarray:
         images = images.to(vae_experiment.device)
         x = vae_experiment.encoder(images)
         mu_on_manifold = vae_experiment.mu(x)

@@ -37,9 +37,7 @@ def train_latent_dim(latent_dim: int = 64):
             LearningRateMonitor("epoch"),
             VisualizeVAEEuclideanLatentSpace(range_start=-4, range_end=4, steps=40),
             VisualizeVAEEuclideanValidationSetEncodings(
-                path_write_image=pathlib.Path(
-                    "/home/jupyter/hyperbolic-vae/figures/latent_space_euclidean.png"
-                ),
+                path_write_image=pathlib.Path("/home/jupyter/hyperbolic-vae/figures/latent_space_euclidean.png"),
             ),
         ],
     )

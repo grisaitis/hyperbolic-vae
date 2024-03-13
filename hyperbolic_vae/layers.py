@@ -64,9 +64,7 @@ class RiemannianLayer(nn.Module):
         if self.over_param:
             return self._bias
         else:
-            return self.manifold.expmap0(
-                self._weight * self._bias
-            )  # reparameterisation of a point on the manifold
+            return self.manifold.expmap0(self._weight * self._bias)  # reparameterisation of a point on the manifold
 
     def reset_parameters(self):
         init.kaiming_normal_(self._weight, a=math.sqrt(5))
