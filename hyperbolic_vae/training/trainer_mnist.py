@@ -19,7 +19,12 @@ def make_trainer_hyperbolic(curvature: float) -> pl.Trainer:
         devices=1,
         max_epochs=300,
         callbacks=[
-            ModelCheckpoint(save_weights_only=True, save_top_k=1, monitor="val/loss_total", save_last=True),
+            ModelCheckpoint(
+                save_weights_only=True,
+                save_top_k=1,
+                monitor="val/loss_total",
+                save_last=True,
+            ),
             GenerateCallback.from_data_module(mnist_data_module, every_n_epochs=1),
             LearningRateMonitor("epoch"),
             VisualizeVAEPoincareDiskValidationSetEncodings(

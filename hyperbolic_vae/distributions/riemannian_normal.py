@@ -30,7 +30,11 @@ class RiemannianNormal(pvae.distributions.RiemannianNormal):
         self.scale = scale.clamp(min=0.1, max=7.0)
         self.radius = HyperbolicRadius(event_shape[0], manifold.c, self.scale)
         self.direction = HypersphericalUniform(event_shape[0] - 1, device=loc.device)
-        logger.debug("calling super init with batch_shape %s, event_shape %s", batch_shape, event_shape)
+        logger.debug(
+            "calling super init with batch_shape %s, event_shape %s",
+            batch_shape,
+            event_shape,
+        )
         super(pvae.distributions.RiemannianNormal, self).__init__(
             batch_shape,
             event_shape,

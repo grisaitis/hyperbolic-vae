@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class WrappedNormal(torch.distributions.Distribution):
-    arg_constraints = {"loc": torch.distributions.constraints.real, "scale": torch.distributions.constraints.positive}
+    arg_constraints = {
+        "loc": torch.distributions.constraints.real,
+        "scale": torch.distributions.constraints.positive,
+    }
     support = torch.distributions.constraints.real
     has_rsample = True
     _mean_carrier_measure = 0

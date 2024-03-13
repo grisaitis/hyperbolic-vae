@@ -6,7 +6,13 @@ from termcolor import colored
 
 
 class ColoredFormatter(logging.Formatter):
-    COLORS = {"WARNING": "yellow", "ERROR": "red", "CRITICAL": "red", "DEBUG": "green", "INFO": "white"}
+    COLORS = {
+        "WARNING": "yellow",
+        "ERROR": "red",
+        "CRITICAL": "red",
+        "DEBUG": "green",
+        "INFO": "white",
+    }
 
     def format(self, record):
         log_message = super().format(record)

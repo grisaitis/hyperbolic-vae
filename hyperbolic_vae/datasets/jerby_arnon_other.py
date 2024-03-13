@@ -65,7 +65,10 @@ class JerbyArnonCSVDataModule(pl.LightningDataModule):
         """
         Prepare data by downloading, extracting, cleaning, saving splits. Called only once globally.
         """
-        for url, csv_filename in [(ANNOTATIONS_CSV_GZ_URL, "annotations.csv"), (TPM_CSV_GZ_URL, "tpm.csv")]:
+        for url, csv_filename in [
+            (ANNOTATIONS_CSV_GZ_URL, "annotations.csv"),
+            (TPM_CSV_GZ_URL, "tpm.csv"),
+        ]:
             csv_path = self.data_path / csv_filename
             if not csv_path.exists():
                 _download_and_extract_csv_gz(url, csv_path)
