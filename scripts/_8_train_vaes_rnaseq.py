@@ -96,6 +96,6 @@ if __name__ == "__main__":
             latent_dim=2,
             manifold_curvature=1.0,
             hidden_layer_dim=16,
-            learning_rate=1e-4,
+            learning_rate=1e-3,
             beta=1.0,
         )
