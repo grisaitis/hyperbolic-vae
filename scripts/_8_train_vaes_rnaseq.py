@@ -87,7 +87,8 @@ if __name__ == "__main__":
     pl.seed_everything(42)
 
     jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset()
-    # jerby_arnon_dataset = jerby_arnon.get_fake_dataset()
+    # jerby_arnon_dataset = jerby_arnon.get_fake_dataset(100, 200, "sum_to_one")
+    # jerby_arnon_dataset = jerby_arnon.get_subset_jerby_arnon_dataset(100, 200, "sum_to_one")
     with torch.autograd.detect_anomaly(check_nan=True):
         train(
             dataset=jerby_arnon_dataset,

@@ -160,9 +160,24 @@ def get_pytorch_dataset(rnaseq_normalize_method: str | None) -> RNASeqAnnotatedD
     return RNASeqAnnotatedDataset(df_rnaseq, df_annotations, rnaseq_normalize_method)
 
 
-def get_fake_dataset() -> RNASeqAnnotatedDataset:
-    n_samples = 1000
-    n_genes = 2000
+def get_subset_jerby_arnon_dataset(
+    n_samples: int = 10,
+    genes_keep_one_in: int = 100,
+    rnaseq_normalize_method: str | None = "sum_to_one",
+) -> RNASeqAnnotatedDataset:
+    df_annotations = _read_annotations(ANNOTATIONS_CSV_PATH)
+    df_rnaseq = _read_tpm(TPM_CSV_PATH, skiprows=lambda i: i % genes_keep_one_in)
+    df_rnaseq = _filter_gene_symbols(df_rnaseq)
+    samples_to_keep = df_annotations.index[:n_samples]
+    df_rnaseq = df_rnaseq.loc[samples_to_keep]
+    df_annotations = df_annotations.loc[samples_to_keep]
+    return RNASeqAnnotatedDataset(df_rnaseq, df_annotations, rnaseq_normalize_method)
+
+
+def make_fake_dataframes(
+    n_samples: int = 1000,
+    n_genes: int = 2000,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     single_cell_id_index = pd.Index([f"cell_{i}" for i in range(n_samples)], name=columns.SINGLE_CELL_ID)
     gene_symbol_index = pd.Index([f"gene_{i:05d}" for i in range(n_genes)], name=columns.GENE_SYMBOL)
     rng = np.random.default_rng(42)
@@ -170,4 +185,13 @@ def get_fake_dataset() -> RNASeqAnnotatedDataset:
     df_rnaseq = pd.DataFrame(rnaseq_tpm, index=single_cell_id_index, columns=gene_symbol_index)
     cell_types = rng.choice(list(nice_to_weirds), size=n_samples)
     df_annotations = pd.DataFrame({columns.CELL_TYPE: cell_types}, index=single_cell_id_index)
-    return RNASeqAnnotatedDataset(df_rnaseq, df_annotations)
+    return df_rnaseq, df_annotations
+
+
+def get_fake_dataset(
+    n_samples: int = 1000,
+    n_genes: int = 2000,
+    rnaseq_normalize_method: str | None = "sum_to_one",
+) -> RNASeqAnnotatedDataset:
+    df_rnaseq, df_annotations = make_fake_dataframes(n_samples, n_genes)
+    return RNASeqAnnotatedDataset(df_rnaseq, df_annotations, rnaseq_normalize_method)
