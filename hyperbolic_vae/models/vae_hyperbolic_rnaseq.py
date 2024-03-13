@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch.distributions.negative_binomial import NegativeBinomial
 
-from hyperbolic_vae.distributions.wrapped_normal import WrappedNormal
+from hyperbolic_vae.distributions.pvae_wrapped_normal import WrappedNormal
 from hyperbolic_vae.layers import ExpMap0
 
 """
@@ -35,6 +35,7 @@ class VAEHyperbolicRNASeq(pl.LightningModule):
         self.beta = beta
         self.latent_dim = latent_dim
         self.manifold = geoopt.PoincareBall(c=manifold_curvature)
+        self.prior_scale = 1.0
         self.encoder = nn.Sequential(
             nn.Linear(input_data_shape.numel(), hidden_layer_dim),
             nn.GELU(),
@@ -65,7 +66,7 @@ class VAEHyperbolicRNASeq(pl.LightningModule):
         return mu, scale, z, x_hat
 
     def loss(self, batch: torch.Tensor) -> dict:
-        x, _ = batch
+        x = batch["rnaseq"]
         batch_shape = x.shape[0:1]
         logger.debug("x.shape: %s", x.shape)
         mu, scale, z, x_hat = self.forward(x)
@@ -81,8 +82,10 @@ class VAEHyperbolicRNASeq(pl.LightningModule):
         assert x_hat_flattened.shape == x_flattened.shape, f"{x_hat_flattened.shape} != {x_flattened.shape}"
         logger.debug("x_hat_flattened.shape: %s", x_hat_flattened.shape)
         logger.debug("x_flattened.shape: %s", x_flattened.shape)
-        qx_z = NegativeBinomial(1_000_000, probs=x_hat_flattened)
-        recon_loss = -qx_z.log_prob(x_flattened).sum(dim=-1)
+        # qx_z = NegativeBinomial(1_000_000, probs=x_hat_flattened)
+        # recon_loss = -qx_z.log_prob(x_flattened).sum(dim=-1)
+        # mse loss
+        recon_loss = (x_hat_flattened - x_flattened).pow(2).sum(dim=-1)
         logger.debug("recon_loss.shape: %s", recon_loss.shape)
         # kl loss
         ## unsqueeze z for log_prob

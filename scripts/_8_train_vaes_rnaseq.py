@@ -64,7 +64,7 @@ def train(
                 path_write_image=Path("/home/jupyter/hyperbolic-vae/figures/latent_space_poincare_gyroplane.png"),
                 range_x=(-(manifold_curvature**-0.5), manifold_curvature**-0.5),
                 range_y=(-(manifold_curvature**-0.5), manifold_curvature**-0.5),
-                every_n_epochs=10,
+                every_n_epochs=1,
             ),
         ],
     )
@@ -76,6 +76,7 @@ def train(
 
 if __name__ == "__main__":
     logging.getLogger("hyperbolic_vae").setLevel("INFO")
+    logging.getLogger("hyperbolic_vae.models.vae_hyperbolic_rnaseq").setLevel("DEBUG")
     logging.getLogger("pvae").setLevel("DEBUG")
     sh = logging.StreamHandler()
     sh.setFormatter(ColoredFormatter("%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s"))
@@ -83,14 +84,15 @@ if __name__ == "__main__":
 
     pl.seed_everything(42)
 
-    # jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset()
-    jerby_arnon_dataset = jerby_arnon.get_fake_dataset()
-    train(
-        dataset=jerby_arnon_dataset,
-        batch_size=64,
-        latent_dim=2,
-        manifold_curvature=1.0,
-        hidden_layer_dim=16,
-        learning_rate=1e-3,
-        beta=1.0,
-    )
+    jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset()
+    # jerby_arnon_dataset = jerby_arnon.get_fake_dataset()
+    with torch.autograd.detect_anomaly(check_nan=True):
+        train(
+            dataset=jerby_arnon_dataset,
+            batch_size=64,
+            latent_dim=2,
+            manifold_curvature=1.0,
+            hidden_layer_dim=16,
+            learning_rate=1e-4,
+            beta=1.0,
+        )
