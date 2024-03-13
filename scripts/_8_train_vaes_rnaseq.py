@@ -79,7 +79,6 @@ def train(
 if __name__ == "__main__":
     logging.getLogger("hyperbolic_vae").setLevel("INFO")
     logging.getLogger("hyperbolic_vae.models.vae_hyperbolic_rnaseq").setLevel("DEBUG")
-    logging.getLogger("pvae").setLevel("DEBUG")
     sh = logging.StreamHandler()
     sh.setFormatter(ColoredFormatter("%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s"))
     logging.getLogger().addHandler(sh)

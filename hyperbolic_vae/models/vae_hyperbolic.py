@@ -5,18 +5,13 @@ import geoopt
 import geoopt.layers.stereographic
 import geoopt.manifolds
 import numpy as np
-import pvae.distributions
-import pvae.manifolds
-
-from pvae.distributions import WrappedNormal
-import pvae.ops.manifold_layers
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import hyperbolic_vae.manifolds
 from hyperbolic_vae.distributions.wrapped_normal import WrappedNormal
+from hyperbolic_vae.layers import GeodesicLayer, MobiusLayer
 from hyperbolic_vae.models.vae_euclidean import VisualizeVAEEuclideanValidationSetEncodings
 
 logger = logging.getLogger(__name__)
@@ -47,7 +42,7 @@ class ImageVAEHyperbolic(nn.Module):
         act_fn: nn.Module,
         image_shape: tuple,
         encoder_last_layer_module: Literal["linear", "mobius"],
-        decoder_first_layer_module: Literal["linear", "pvae_geodesic", "pvae_mobius", "geoopt_gyroplane"],
+        decoder_first_layer_module: Literal["linear", "geodesic", "mobius", "geoopt_gyroplane"],
         manifold_curvature: float,
         loss_recon: str,
     ):
@@ -73,19 +68,17 @@ class ImageVAEHyperbolic(nn.Module):
         # self.mu = MobiusLayer(encoder_out_channels, latent_dim, self.manifold)
         if encoder_last_layer_module == "linear":
             self.mu = nn.Linear(encoder_out_channels, latent_dim)
-        elif encoder_last_layer_module == "pvae_mobius":
-            self.mu = pvae.ops.manifold_layers.MobiusLayer(encoder_out_channels, latent_dim, self.manifold)
+        elif encoder_last_layer_module == "mobius":
+            self.mu = MobiusLayer(encoder_out_channels, latent_dim, self.manifold)
         else:
             raise ValueError(f"encoder_last_layer_module {encoder_last_layer_module} not supported")
         self.log_var = nn.Linear(encoder_out_channels, latent_dim)
         if decoder_first_layer_module == "linear":
             decoder_first_layer = nn.Linear(latent_dim, encoder_out_channels)
-        elif decoder_first_layer_module == "pvae_geodesic":
-            decoder_first_layer = pvae.ops.manifold_layers.GeodesicLayer(
-                latent_dim, encoder_out_channels, self.manifold
-            )
-        elif decoder_first_layer_module == "pvae_mobius":
-            decoder_first_layer = pvae.ops.manifold_layers.MobiusLayer(latent_dim, encoder_out_channels, self.manifold)
+        elif decoder_first_layer_module == "geodesic":
+            decoder_first_layer = GeodesicLayer(latent_dim, encoder_out_channels, self.manifold)
+        elif decoder_first_layer_module == "mobius":
+            decoder_first_layer = MobiusLayer(latent_dim, encoder_out_channels, self.manifold)
         elif decoder_first_layer_module == "geoopt_gyroplane":
             decoder_first_layer = geoopt.layers.stereographic.Distance2StereographicHyperplanes(
                 latent_dim,
@@ -125,7 +118,7 @@ class ImageVAEHyperbolic(nn.Module):
         # samples_qz_x = encoder_output.qz_x.rsample(torch.Size([1])).squeeze(0)
         if self.encoder_last_layer_module == "linear":
             mu_qz_x_on_manifold = self.manifold.expmap0(mu_qz_x)
-        elif self.encoder_last_layer_module == "pvae_mobius":
+        elif self.encoder_last_layer_module == "mobius":
             mu_qz_x_on_manifold = mu_qz_x
         else:
             raise ValueError(f"encoder_last_layer_module {self.encoder_last_layer_module} not supported")
@@ -142,8 +135,8 @@ class VAEHyperbolicExperiment(pl.LightningModule):
         image_shape: tuple = (1, 32, 32),
         latent_dim: int = 2,
         manifold_curvature: float = 1.0,
-        encoder_last_layer_module: Literal["linear", "pvae_mobius"] = "linear",
-        decoder_first_layer_module: Literal["linear", "pvae_geodesic", "pvae_mobius", "geoopt_gyroplane"] = "linear",
+        encoder_last_layer_module: Literal["linear", "mobius"] = "linear",
+        decoder_first_layer_module: Literal["linear", "geodesic", "mobius", "geoopt_gyroplane"] = "linear",
         beta: float = 1.0,
         lr: float = 1e-3,
         loss_recon: Literal["mse", "bernoulli"] = "mse",
@@ -192,7 +185,7 @@ class VAEHyperbolicExperiment(pl.LightningModule):
         # qz_x = encoder_output.qz_x
         if self.model.encoder_last_layer_module == "linear":
             mu_qz_x_on_manifold = self.model.manifold.expmap0(mu_qz_x)
-        elif self.model.encoder_last_layer_module == "pvae_mobius":
+        elif self.model.encoder_last_layer_module == "mobius":
             mu_qz_x_on_manifold = mu_qz_x
         scale_qz_x = torch.exp(0.5 * log_var_qz_x)
         qz_x = WrappedNormal(mu_qz_x_on_manifold, scale_qz_x, self.model.manifold)

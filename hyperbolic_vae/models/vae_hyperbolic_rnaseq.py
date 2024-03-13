@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch.distributions.negative_binomial import NegativeBinomial
 
-from hyperbolic_vae.distributions.pvae_wrapped_normal import WrappedNormal
+from hyperbolic_vae.distributions.wrapped_normal import WrappedNormal
 from hyperbolic_vae.layers import ExpMap0
 
 """

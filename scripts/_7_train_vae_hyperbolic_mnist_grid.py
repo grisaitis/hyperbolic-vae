@@ -3,7 +3,6 @@ import logging
 import os
 import pathlib
 
-import pvae.ops.manifold_layers
 import pytorch_lightning as pl
 import torch
 from geoopt.layers.stereographic import Distance2StereographicHyperplanes
@@ -56,7 +55,7 @@ if __name__ == "__main__":
     curvatures = [0.5, 1.0, 2.0]
     betas = [1.0, 2.0]
     latent_dims = [2, 5]
-    encoder_last_layer_modules = ["pvae_mobius"]
+    encoder_last_layer_modules = ["mobius"]
     decoder_first_layer_modules = ["geoopt_gyroplane"]
 
     combinations = itertools.product(
