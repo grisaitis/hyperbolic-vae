@@ -133,3 +133,16 @@ def get_pytorch_dataset() -> RNASeqAnnotatedDataset:
     df_rnaseq = _read_tpm(TPM_CSV_PATH)
     df_rnaseq = _filter_gene_symbols(df_rnaseq)
     return RNASeqAnnotatedDataset(df_rnaseq, df_annotations)
+
+
+def get_fake_dataset() -> RNASeqAnnotatedDataset:
+    n_samples = 1000
+    n_genes = 2000
+    single_cell_id_index = pd.Index([f"cell_{i}" for i in range(n_samples)], name=columns.SINGLE_CELL_ID)
+    gene_symbol_index = pd.Index([f"gene_{i:05d}" for i in range(n_genes)], name=columns.GENE_SYMBOL)
+    rng = np.random.default_rng(42)
+    rnaseq_tpm = rng.poisson(100, size=(n_samples, n_genes))
+    df_rnaseq = pd.DataFrame(rnaseq_tpm, index=single_cell_id_index, columns=gene_symbol_index)
+    cell_types = rng.choice(list(nice_to_weirds), size=n_samples)
+    df_annotations = pd.DataFrame({columns.CELL_TYPE: cell_types}, index=single_cell_id_index)
+    return RNASeqAnnotatedDataset(df_rnaseq, df_annotations)
