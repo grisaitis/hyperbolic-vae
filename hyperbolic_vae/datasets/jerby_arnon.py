@@ -103,10 +103,15 @@ def _read_annotations(path_csv: Path) -> pd.DataFrame:
     return df
 
 
-def _read_tpm(path_csv: Path) -> pd.DataFrame:
+def _read_tpm(path_csv: Path, skiprows=None) -> pd.DataFrame:
     """Returns a pd.DataFrame with cells as rows, genes as columns."""
     logger.info("reading TPM from %s", path_csv)
-    df = pd.read_csv(path_csv, engine="pyarrow", index_col=0)
+    if skiprows is None:
+        logger.debug("reading tpm csv with pyarrow")
+        df = pd.read_csv(path_csv, engine="pyarrow", index_col=0)
+    else:
+        logger.debug("reading tpm csv with skiprows")
+        df = pd.read_csv(path_csv, index_col=0, skiprows=skiprows)
     logger.info("renaming and sorting index")
     df = df.rename_axis(index=columns.GENE_SYMBOL, columns=columns.SINGLE_CELL_ID)
     df = df.sort_index(axis="columns")
