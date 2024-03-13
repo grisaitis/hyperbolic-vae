@@ -53,6 +53,7 @@ class RNASeqAnnotatedDataset(Dataset):
         self,
         df_rnaseq: pd.DataFrame,
         df_annotations: pd.DataFrame,
+        rnaseq_normalize_method: str | None,
     ):
         """
         Initialize the RNASeqAnnotatedDataset object.
@@ -60,12 +61,26 @@ class RNASeqAnnotatedDataset(Dataset):
         Args:
             df_rnaseq (pd.DataFrame): A DataFrame of shape (n samples, n genes) with RNA-seq counts or transcripts.
             df_annotations (pd.DataFrame): A DataFrame of shape (n samples, annotations) with cell_type and other columns.
+            rnaseq_normalize_method (str | None): The method to normalize the gene expression values.
+                If "sum_to_one", the gene expression values are normalized to sum to 1.0.
+                If "sum_to_million", the gene expression values are normalized to sum to 1,000,000.
+                If None, the gene expression values are not normalized.
         """
         assert df_rnaseq.index.name == columns.SINGLE_CELL_ID
         assert df_rnaseq.columns.name == columns.GENE_SYMBOL
         assert df_annotations.index.name == columns.SINGLE_CELL_ID
         assert df_rnaseq.index.equals(df_annotations.index)
         self.df_rnaseq = df_rnaseq
+        if rnaseq_normalize_method is None:
+            pass
+        elif rnaseq_normalize_method == "sum_to_one":
+            self.df_rnaseq = df_rnaseq.div(df_rnaseq.sum(axis=1), axis=0)
+            print(self.df_rnaseq.sum(axis=0))
+            print(self.df_rnaseq.sum(axis=1))
+        elif rnaseq_normalize_method == "sum_to_million":
+            self.df_rnaseq = df_rnaseq.div(df_rnaseq.sum(axis=1), axis=0) * 1_000_000
+        else:
+            raise ValueError(f"rnaseq_normalize_method {rnaseq_normalize_method} not recognized")
         self.df_annotations = df_annotations
 
     def __len__(self):
@@ -134,11 +149,11 @@ def _filter_gene_symbols(df_tpm: pd.DataFrame) -> pd.DataFrame:
     return df_tpm
 
 
-def get_pytorch_dataset() -> RNASeqAnnotatedDataset:
+def get_pytorch_dataset(rnaseq_normalize_method: str | None) -> RNASeqAnnotatedDataset:
     df_annotations = _read_annotations(ANNOTATIONS_CSV_PATH)
     df_rnaseq = _read_tpm(TPM_CSV_PATH)
     df_rnaseq = _filter_gene_symbols(df_rnaseq)
-    return RNASeqAnnotatedDataset(df_rnaseq, df_annotations)
+    return RNASeqAnnotatedDataset(df_rnaseq, df_annotations, rnaseq_normalize_method)
 
 
 def get_fake_dataset() -> RNASeqAnnotatedDataset:
