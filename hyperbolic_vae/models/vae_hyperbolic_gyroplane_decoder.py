@@ -14,7 +14,7 @@ from torch import nn
 from torch.distributions import RelaxedBernoulli
 
 import hyperbolic_vae
-from hyperbolic_vae.distributions.wrapped_normal import WrappedNormal
+from hyperbolic_vae.distributions.pvae_wrapped_normal import WrappedNormal
 from hyperbolic_vae.layers import ExpMap0, GeodesicLayer
 from hyperbolic_vae.models.vae_euclidean import VisualizeVAEEuclideanValidationSetEncodings
 
@@ -189,8 +189,8 @@ class VAEHyperbolicGyroplaneDecoder(pl.LightningModule):
 
 
 class VisualizeEncodingsValidationSet(VisualizeVAEEuclideanValidationSetEncodings):
-    def get_encodings(self, images: torch.Tensor, vae_experiment: VAEHyperbolicGyroplaneDecoder) -> np.ndarray:
-        images = images.to(vae_experiment.device)
-        x = vae_experiment.encoder(images)
+    def get_encodings(self, input_tensors: torch.Tensor, vae_experiment: VAEHyperbolicGyroplaneDecoder) -> np.ndarray:
+        input_tensors = input_tensors.to(vae_experiment.device)
+        x = vae_experiment.encoder(input_tensors)
         mu_on_manifold = vae_experiment.mu(x)
         return mu_on_manifold.cpu().numpy()

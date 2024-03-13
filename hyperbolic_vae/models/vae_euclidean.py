@@ -255,8 +255,14 @@ class VisualizeVAEEuclideanValidationSetEncodings(Callback):
         vae_experiment.train()
 
     def create_plotly_figure(self, df: pd.DataFrame) -> go.Figure:
+        # if df "label" column is numeric...
+        try:
+            df = df.astype({"label": "int"}).astype({"label": "str"})
+        except ValueError:
+            pass
+        df = df.sort_values(by="label")
         fig = px.scatter(
-            df.astype({"label": "int"}).astype({"label": "str"}).sort_values(by="label"),
+            df,
             x="mu_0",
             y="mu_1",
             color="label",
@@ -274,17 +280,20 @@ class VisualizeVAEEuclideanValidationSetEncodings(Callback):
         # fig.for_each_trace(lambda t: t.update(textfont_color="black", textposition="top center"))
         return fig
 
-    def get_encodings(self, images: Tensor, vae_experiment: VAEEuclideanExperiment) -> np.ndarray:
-        images = images.to(vae_experiment.device)
-        e = vae_experiment.vae.encoder(images)
+    def get_encodings(self, input_tensors: Tensor, vae_experiment: VAEEuclideanExperiment) -> np.ndarray:
+        input_tensors = input_tensors.to(vae_experiment.device)
+        e = vae_experiment.vae.encoder(input_tensors)
         mu = vae_experiment.vae.mu(e)
         return mu.cpu().numpy()
 
     def get_encodings_as_dataframe(self, vae_experiment, data_loader_val):
         df = pd.DataFrame(columns=["i_batch", "mu_0", "mu_1"])
         for i, batch in enumerate(data_loader_val):
-            images, labels = batch
-            mu = self.get_encodings(images, vae_experiment)
+            try:
+                input_tensors, labels = batch["rnaseq"], batch["cell_type_series"]
+            except KeyError:
+                input_tensors, labels = batch
+            mu = self.get_encodings(input_tensors, vae_experiment)
             df_batch = pd.DataFrame({"label": labels, "mu_0": mu[:, 0], "mu_1": mu[:, 1]})
             df = pd.concat([df, df_batch], ignore_index=True)
         return df
