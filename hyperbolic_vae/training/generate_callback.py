@@ -27,5 +27,5 @@ class GenerateCallback(pl.Callback):
                 pl_module.train()
             # Plot and add to tensorboard
             imgs = torch.stack([input_imgs, reconst_imgs], dim=1).flatten(0, 1)
-            grid = torchvision.utils.make_grid(imgs, nrow=2, normalize=True, range=(-1, 1))
+            grid = torchvision.utils.make_grid(imgs, nrow=2, normalize=True)
             trainer.logger.experiment.add_image("Reconstructions", grid, global_step=trainer.global_step)
