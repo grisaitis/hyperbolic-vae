@@ -133,7 +133,11 @@ class VAEEuclideanExperiment(pl.LightningModule):
         # KL divergence loss
         loss_kld = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
         loss_total = loss_recon + self.beta * loss_kld
-        return {"loss_recon": loss_recon, "loss_kld": loss_kld, "loss_total": loss_total}
+        return {
+            "loss_recon": loss_recon,
+            "loss_kld": loss_kld,
+            "loss_total": loss_total,
+        }
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

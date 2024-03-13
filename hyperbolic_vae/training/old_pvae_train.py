@@ -25,7 +25,12 @@ def loss_function(
     # error here...
     # lpx_z = px_z.log_prob(x.expand(px_z.batch_shape)).view(flat_rest).sum(-1)
     x_for_log_prob = x.expand(px_z.batch_shape)
-    print("x_for_log_prob", x_for_log_prob.shape, x_for_log_prob[:1, :1, :1, :5], x_for_log_prob.mean())
+    print(
+        "x_for_log_prob",
+        x_for_log_prob.shape,
+        x_for_log_prob[:1, :1, :1, :5],
+        x_for_log_prob.mean(),
+    )
     unique_values, counts = torch.unique(x_for_log_prob, return_counts=True)
     print(
         "unique_values and counts",
@@ -87,6 +92,9 @@ def train(
     if epoch % 1 == 0:
         print(
             "====> Epoch: {:03d} Loss: {:.2f} Recon: {:.2f} KL: {:.2f}".format(
-                epoch, agg["train_loss"][-1], agg["train_recon"][-1], agg["train_kl"][-1]
+                epoch,
+                agg["train_loss"][-1],
+                agg["train_recon"][-1],
+                agg["train_kl"][-1],
             )
         )

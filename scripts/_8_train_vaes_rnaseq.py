@@ -34,7 +34,9 @@ def train(
     val_size = int(0.15 * len(dataset))
     test_size = len(dataset) - train_size - val_size
     dataset_train, dataset_val, dataset_test = torch.utils.data.random_split(
-        dataset, [train_size, val_size, test_size], generator=torch.Generator().manual_seed(42)
+        dataset,
+        [train_size, val_size, test_size],
+        generator=torch.Generator().manual_seed(42),
     )
     data_module = pl.LightningDataModule.from_datasets(
         train_dataset=dataset_train,

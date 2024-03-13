@@ -66,7 +66,13 @@ if __name__ == "__main__":
         encoder_last_layer_modules,
         decoder_first_layer_modules,
     )
-    for curvature, beta, latent_dim, encoder_last_layer_module, decoder_first_layer_module in combinations:
+    for (
+        curvature,
+        beta,
+        latent_dim,
+        encoder_last_layer_module,
+        decoder_first_layer_module,
+    ) in combinations:
         try:
             run_experiment(
                 latent_dim=latent_dim,
