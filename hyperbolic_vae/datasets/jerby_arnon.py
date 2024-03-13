@@ -82,6 +82,10 @@ class RNASeqAnnotatedDataset(Dataset):
         else:
             raise ValueError(f"rnaseq_normalize_method {rnaseq_normalize_method} not recognized")
         self.df_annotations = df_annotations
+        logger.debug("df_rnaseq.iloc[:10, :10]:\n%s", df_rnaseq.iloc[:10, :10])
+        logger.debug("df_rnaseq.sum(axis=0):\n%s", df_rnaseq.sum(axis=0))
+        logger.debug("df_rnaseq.sum(axis=1):\n%s", df_rnaseq.sum(axis=1))
+        logger.debug("df_annotations.head():\n%s", df_annotations.head())
 
     def __len__(self):
         return len(self.df_annotations)
