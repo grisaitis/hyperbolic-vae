@@ -41,9 +41,7 @@ def run_experiment(
     )
     with torch.autograd.detect_anomaly(check_nan=True):
         trainer.fit(model, mnist_data_module)
-    best_vae_experiment = VAEHyperbolicExperiment.load_from_checkpoint(
-        trainer.checkpoint_callback.best_model_path
-    )
+    best_vae_experiment = VAEHyperbolicExperiment.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
     trainer.test(best_vae_experiment, mnist_data_module)
 
 

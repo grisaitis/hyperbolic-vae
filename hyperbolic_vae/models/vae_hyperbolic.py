@@ -8,7 +8,7 @@ import numpy as np
 import pvae.distributions
 import pvae.manifolds
 
-# from pvae.distributions import WrappedNormal
+from pvae.distributions import WrappedNormal
 import pvae.ops.manifold_layers
 import pytorch_lightning as pl
 import torch
@@ -85,9 +85,7 @@ class ImageVAEHyperbolic(nn.Module):
                 latent_dim, encoder_out_channels, self.manifold
             )
         elif decoder_first_layer_module == "pvae_mobius":
-            decoder_first_layer = pvae.ops.manifold_layers.MobiusLayer(
-                latent_dim, encoder_out_channels, self.manifold
-            )
+            decoder_first_layer = pvae.ops.manifold_layers.MobiusLayer(latent_dim, encoder_out_channels, self.manifold)
         elif decoder_first_layer_module == "geoopt_gyroplane":
             decoder_first_layer = geoopt.layers.stereographic.Distance2StereographicHyperplanes(
                 latent_dim,
@@ -145,9 +143,7 @@ class VAEHyperbolicExperiment(pl.LightningModule):
         latent_dim: int = 2,
         manifold_curvature: float = 1.0,
         encoder_last_layer_module: Literal["linear", "pvae_mobius"] = "linear",
-        decoder_first_layer_module: Literal[
-            "linear", "pvae_geodesic", "pvae_mobius", "geoopt_gyroplane"
-        ] = "linear",
+        decoder_first_layer_module: Literal["linear", "pvae_geodesic", "pvae_mobius", "geoopt_gyroplane"] = "linear",
         beta: float = 1.0,
         lr: float = 1e-3,
         loss_recon: Literal["mse", "bernoulli"] = "mse",
@@ -231,9 +227,7 @@ class VAEHyperbolicExperiment(pl.LightningModule):
         elif self.loss_recon == "bernoulli":
             x_hat_flattened = x_hat.flatten(start_dim=1)
             x_flattened = x.flatten(start_dim=1)
-            assert (
-                x_hat_flattened.shape == x_flattened.shape
-            ), f"{x_hat_flattened.shape} != {x_flattened.shape}"
+            assert x_hat_flattened.shape == x_flattened.shape, f"{x_hat_flattened.shape} != {x_flattened.shape}"
             qx_z = torch.distributions.RelaxedBernoulli(temperature=torch.tensor(0.1), logits=x_hat_flattened)
             loss_recon = -qx_z.log_prob(x_flattened).mean()
         else:

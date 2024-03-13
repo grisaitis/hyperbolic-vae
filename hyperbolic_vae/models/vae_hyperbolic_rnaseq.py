@@ -81,7 +81,7 @@ class VAEHyperbolicRNASeq(pl.LightningModule):
         assert x_hat_flattened.shape == x_flattened.shape, f"{x_hat_flattened.shape} != {x_flattened.shape}"
         logger.debug("x_hat_flattened.shape: %s", x_hat_flattened.shape)
         logger.debug("x_flattened.shape: %s", x_flattened.shape)
-        qx_z = NegativeBinomial(total_count, probs=x_hat_flattened)
+        qx_z = NegativeBinomial(1_000_000, probs=x_hat_flattened)
         recon_loss = -qx_z.log_prob(x_flattened).sum(dim=-1)
         logger.debug("recon_loss.shape: %s", recon_loss.shape)
         # kl loss

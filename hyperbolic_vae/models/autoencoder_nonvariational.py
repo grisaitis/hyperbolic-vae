@@ -128,9 +128,7 @@ class Autoencoder(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=1e-3)
-        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode="min", factor=0.2, patience=20, min_lr=5e-5
-        )
+        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.2, patience=20, min_lr=5e-5)
         return {
             "optimizer": optimizer,
             "lr_scheduler": lr_scheduler,
