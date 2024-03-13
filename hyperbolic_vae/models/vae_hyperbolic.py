@@ -1,5 +1,5 @@
 import logging
-from typing import Literal
+from typing import Literal, Union
 
 import geoopt
 import geoopt.layers.stereographic
@@ -107,7 +107,7 @@ class ImageVAEHyperbolic(nn.Module):
             decoder_layers.append(nn.Sigmoid())
         self.decoder = nn.Sequential(*decoder_layers)
 
-    def forward(self, x: torch.Tensor) -> [torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> Union[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         e = self.encoder(x)
         mu_qz_x = self.mu(e)
         if self.loss_recon == "bernoulli":
