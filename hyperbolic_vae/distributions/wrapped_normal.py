@@ -64,7 +64,9 @@ class WrappedMultivariateNormal(torch.distributions.MultivariateNormal):
         self.loc = loc
         self.scale = scale
         super(torch.distributions.MultivariateNormal, self).__init__(
-            batch_shape=loc.shape[:-1], event_shape=loc.shape[-1:], validate_args=validate_args
+            batch_shape=loc.shape[:-1],
+            event_shape=loc.shape[-1:],
+            validate_args=validate_args,
         )
 
     def rsample(self, sample_shape: torch.Size = torch.Size()) -> geoopt.ManifoldTensor:
