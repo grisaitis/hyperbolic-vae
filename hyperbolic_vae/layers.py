@@ -128,3 +128,20 @@ class ExpMap0(nn.Module):
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return self.manifold.expmap0(input)
+
+
+class MobiusLayer(RiemannianLayer):
+    """Taken from https://github.com/emilemathieu/pvae/blob/c04ec2149fc4d37fd83946a366780816c0cbe3c0/pvae/ops/manifold_layers.py#L65"""
+
+    def __init__(self, in_features, out_features, manifold, over_param=False, weight_norm=False):
+        super(MobiusLayer, self).__init__(
+            in_features,
+            out_features,
+            manifold,
+            over_param,
+            weight_norm,
+        )
+
+    def forward(self, input):
+        res = self.manifold.mobius_matvec(self.weight, input)
+        return res
