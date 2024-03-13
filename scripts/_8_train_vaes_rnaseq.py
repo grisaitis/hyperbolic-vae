@@ -59,7 +59,6 @@ def train(
         max_epochs=300,
         callbacks=[
             ModelCheckpoint(save_weights_only=True, every_n_epochs=10),
-            GenerateCallback.from_data_module(data_module, every_n_epochs=1),
             LearningRateMonitor("epoch"),
             VisualizeEncodingsValidationSet(
                 path_write_image=Path("/home/jupyter/hyperbolic-vae/figures/latent_space_poincare_gyroplane.png"),
@@ -84,7 +83,8 @@ if __name__ == "__main__":
 
     pl.seed_everything(42)
 
-    jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset()
+    # jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset()
+    jerby_arnon_dataset = jerby_arnon.get_fake_dataset()
     train(
         dataset=jerby_arnon_dataset,
         batch_size=64,
