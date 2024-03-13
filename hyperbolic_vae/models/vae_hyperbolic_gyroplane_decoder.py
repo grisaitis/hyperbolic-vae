@@ -4,17 +4,14 @@ import geoopt
 import geoopt.layers.stereographic
 import numpy as np
 
-# import pvae.ops.manifold_layers
-# import pvae.distributions
 import pytorch_lightning as pl
 import torch
 
-# from pvae.distributions import WrappedNormal
 from torch import nn
 from torch.distributions import RelaxedBernoulli
 
 import hyperbolic_vae
-from hyperbolic_vae.distributions.pvae_wrapped_normal import WrappedNormal
+from hyperbolic_vae.distributions.wrapped_normal import WrappedNormal
 from hyperbolic_vae.layers import ExpMap0, GeodesicLayer
 from hyperbolic_vae.models.vae_euclidean import VisualizeVAEEuclideanValidationSetEncodings
 
