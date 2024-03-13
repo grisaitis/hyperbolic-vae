@@ -12,6 +12,8 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import Dataset
 
+from hyperbolic_vae.util import ColoredFormatter
+
 logger = logging.getLogger(__name__)
 
 ANNOTATIONS_CSV_GZ_URL = (
@@ -195,3 +197,21 @@ def get_fake_dataset(
 ) -> RNASeqAnnotatedDataset:
     df_rnaseq, df_annotations = make_fake_dataframes(n_samples, n_genes)
     return RNASeqAnnotatedDataset(df_rnaseq, df_annotations, rnaseq_normalize_method)
+
+
+if __name__ == "__main__":
+    # logging.getLogger("hyperbolic_vae").setLevel("INFO")
+    # logging.getLogger("hyperbolic_vae.models.vae_hyperbolic_rnaseq").setLevel("DEBUG")
+    logging.getLogger().setLevel("INFO")
+    sh = logging.StreamHandler()
+    sh.setFormatter(ColoredFormatter("%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s"))
+    logging.getLogger().addHandler(sh)
+
+    # dataset = get_fake_dataset(5, 10)
+    dataset = get_subset_jerby_arnon_dataset(100, 100, "sum_to_one")
+    print(dataset.df_rnaseq)
+    print("type", type(dataset.df_rnaseq))
+    print("index names", dataset.df_rnaseq.index.name, dataset.df_rnaseq.columns.name)
+    print(dataset.df_annotations)
+    print("type", type(dataset.df_annotations))
+    print("index names", dataset.df_annotations.index.name)
