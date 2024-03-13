@@ -295,7 +295,7 @@ class VisualizeVAEEuclideanValidationSetEncodings(Callback):
         for i, batch in enumerate(data_loader_val):
             try:
                 input_tensors, labels = batch["rnaseq"], batch["cell_type_series"]
-            except KeyError:
+            except:
                 input_tensors, labels = batch
             mu = self.get_encodings(input_tensors, vae_experiment)
             df_batch = pd.DataFrame({"label": labels, "mu_0": mu[:, 0], "mu_1": mu[:, 1]})
