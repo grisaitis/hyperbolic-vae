@@ -93,6 +93,7 @@ def _read_annotations(path_csv: Path) -> pd.DataFrame:
             "samples": columns.SAMPLE_ID,
         }
     )
+    df[columns.CELL_TYPE] = df[columns.CELL_TYPE].fillna("Unknown")
     logger.info("Renamed columns")
     df = df.replace({columns.CELL_TYPE: weird_to_nice})
     df = df.rename_axis(index=columns.SINGLE_CELL_ID)
