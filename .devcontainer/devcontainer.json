@@ -1,0 +1,41 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/anaconda
+{
+	"image": "mcr.microsoft.com/devcontainers/ubuntu-22.04",
+	"features": {
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/rocker-org/devcontainer-features/miniforge:1": {
+			"version": "latest",
+			"variant": "Mambaforge"
+		},
+		"ghcr.io/devcontainers-contrib/features/apt-packages:1": {
+			"packages": [
+				"htop",
+				"curl",
+				"vim",
+				"tree"
+			]
+		},
+		"features": {
+			"ghcr.io/devcontainers-contrib/features/vtop:2": {}
+		}
+	},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "python --version",
+	// Configure tool-specific properties.
+	"customizations": {
+		// "conda": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"ms-toolsai.tensorboard"
+			]
+		}
+	},
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}
