@@ -16,9 +16,7 @@
 				"tree"
 			]
 		},
-		"features": {
-			"ghcr.io/devcontainers-contrib/features/vtop:2": {}
-		}
+		"ghcr.io/devcontainers-contrib/features/vtop:2": {}
 	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
