@@ -1,14 +1,9 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/anaconda
 {
-	// mcr.microsoft.com/devcontainers/python:3.11
-	"image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+	"image": "mcr.microsoft.com/devcontainers/python:3.11",
 	"features": {
 		"ghcr.io/devcontainers/features/github-cli:1": {},
-		"ghcr.io/rocker-org/devcontainer-features/miniforge:1": {
-			"version": "latest",
-			"variant": "Mambaforge"
-		},
 		"ghcr.io/devcontainers-contrib/features/apt-packages:1": {
 			"packages": [
 				"htop",
@@ -21,17 +16,17 @@
 	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
-	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "./.devcontainer/postCreate.sh",
-	// Configure tool-specific properties.
 	"customizations": {
-		// "conda": {
 		"vscode": {
 			"extensions": [
 				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"charliermarsh.ruff",
+				"ms-toolsai.tensorboard",
 				"GitHub.copilot",
 				"GitHub.copilot-chat",
-				"ms-toolsai.tensorboard"
+				"VisualStudioExptTeam.vscodeintellicode"
 			]
 		}
 	}

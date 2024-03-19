@@ -1,27 +1,24 @@
 {
-    "python.defaultInterpreterPath": "/opt/conda/bin/python",
+    // "python.defaultInterpreterPath": "/opt/conda/bin/python",
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "modifications",
+    "editor.formatOnPaste": true,
     "notebook.formatOnSave.enabled": true,
     "notebook.formatOnCellExecution": true,
-    "editor.formatOnPaste": true,
-    "ruff.lint.args": [
-        "--config=/home/jupyter/hyperbolic-vae/pyproject.toml"
-    ],
-    "ruff.lint.run": "onSave",
-    "ruff.organizeImports": true,
-    "ruff.format.args": [
-        "--config=/home/jupyter/hyperbolic-vae/pyproject.toml"
-    ],
+    "notebook.codeActionsOnSave": {
+        "notebook.source.fixAll": "explicit",
+        "notebook.source.organizeImports": "explicit"
+    },
     "[python]": {
-        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.fixAll": "explicit",
             "source.organizeImports": "explicit"
         },
-        "notebook.codeActionsOnSave": {
-            "source.fixAll": true,
-            "source.organizeImports": true
-        }
-    }
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.languageServer": "Pylance",
+    "ruff.showNotifications": "onError"
 }
