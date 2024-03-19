@@ -149,3 +149,9 @@ class VAEHyperbolicRNASeq(pl.LightningModule):
             "lr_scheduler": lr_scheduler,
             "monitor": "val/loss_total",
         }
+
+    def on_train_epoch_end(self) -> None:
+        # print loss values from last step
+        logger.info("train/loss_total: %s", self.trainer.callback_metrics["train/loss_total"])
+        logger.info("train/recon_loss: %s", self.trainer.callback_metrics["train/recon_loss"])
+        logger.info("train/kl_loss: %s", self.trainer.callback_metrics["train/kl_loss"])
