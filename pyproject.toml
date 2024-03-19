@@ -14,7 +14,6 @@ torch = {version = "2.2.1", source = "pytorch-cpu"}
 pytorch-lightning = "2.2.1"
 torchvision = {version = "0.17.1", source = "pytorch-cpu"}
 termcolor = "2.4.0"
-tensorboard = "2.16.2"
 kaleido = "0.2.1"
 numpy = "^1.23"
 pandas = "^2"
@@ -29,10 +28,12 @@ geoopt = {git = "https://github.com/geoopt/geoopt.git", rev = "a41c09b7"}
 # pvae = { path = "../pvae", develop = true }
 
 [tool.poetry.dev-dependencies]
-black = "^21.9"
-ruff = "^0.3"
-isort = "^5.9"
+black = "*"
+ruff = "*"
+isort = "*"
 pytest = "*"
+ipython = "*"
+tensorboard = "2.16.2"
 
 [[tool.poetry.source]]
 name = "pytorch-cpu"
@@ -40,8 +41,7 @@ url = "https://download.pytorch.org/whl/cpu"
 priority = "supplemental"
 
 [tool.black]
-line-length = 110
-target-version = ['py310']
+target-version = ['py311']
 # 'extend-exclude' excludes files or directories in addition to the defaults
 extend-exclude = '''
 # A regex preceded with ^/ will apply only to files and directories
@@ -56,7 +56,7 @@ extend-exclude = '''
 '''
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 fix = true
 line-length = 120
 respect-gitignore = true
