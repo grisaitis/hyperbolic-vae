@@ -1,6 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/anaconda
 {
+	// mcr.microsoft.com/devcontainers/python:3.11
 	"image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
 	"features": {
 		"ghcr.io/devcontainers/features/github-cli:1": {},
@@ -31,10 +32,7 @@
 				"GitHub.copilot",
 				"GitHub.copilot-chat",
 				"ms-toolsai.tensorboard"
-			],
-			"settings": {
-				"python.pythonPath": "/opt/conda/envs/hyperbolic-vae/bin/python"
-			}
+			]
 		}
 	}
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
