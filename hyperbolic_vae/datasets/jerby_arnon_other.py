@@ -11,6 +11,7 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import Dataset
 
+from hyperbolic_vae.config import DATA_PATH
 from hyperbolic_vae.datasets.jerby_arnon import (
     ANNOTATIONS_CSV_GZ_URL,
     TPM_CSV_GZ_URL,
@@ -155,3 +156,16 @@ class JerbyArnonCSVDataModule(pl.LightningDataModule):
 #     batch_size=256,
 #     num_workers=4,
 # )
+
+
+if __name__ == "__main__":
+    path_jerby_arnon = DATA_PATH / "jerby_arnon"
+    path_jerby_arnon.mkdir(exist_ok=True)
+    _download_and_extract_csv_gz(
+        ANNOTATIONS_CSV_GZ_URL,
+        path_jerby_arnon / "annotations.csv",
+    )
+    _download_and_extract_csv_gz(
+        TPM_CSV_GZ_URL,
+        path_jerby_arnon / "tpm.csv",
+    )
