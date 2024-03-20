@@ -19,6 +19,12 @@ class ColoredFormatter(logging.Formatter):
         return colored(log_message, self.COLORS.get(record.levelname))
 
 
+def configure_handler_for_script():
+    sh = logging.StreamHandler()
+    sh.setFormatter(ColoredFormatter("%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s"))
+    logging.getLogger().addHandler(sh)
+
+
 if __name__ == "__main__":
     # Set up logging
     logger = logging.getLogger(__name__)

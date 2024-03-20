@@ -15,19 +15,11 @@ from hyperbolic_vae.config import DATA_PATH
 from hyperbolic_vae.datasets.jerby_arnon import (
     ANNOTATIONS_CSV_GZ_URL,
     TPM_CSV_GZ_URL,
+    _download_and_extract_csv_gz,
     _filter_gene_symbols,
     _read_annotations,
     _read_tpm,
 )
-
-
-def _download_and_extract_csv_gz(url: str, save_path: Path) -> None:
-    with urllib.request.urlopen(url) as response:
-        compressed_file = io.BytesIO(response.read())
-    with gzip.open(compressed_file, "rb") as gz:
-        decompressed_content = gz.read()
-    with open(save_path, "wb") as f_out:
-        f_out.write(decompressed_content)
 
 
 def _save_split_parquet_datasets(
@@ -156,16 +148,3 @@ class JerbyArnonCSVDataModule(pl.LightningDataModule):
 #     batch_size=256,
 #     num_workers=4,
 # )
-
-
-if __name__ == "__main__":
-    path_jerby_arnon = DATA_PATH / "jerby_arnon"
-    path_jerby_arnon.mkdir(exist_ok=True)
-    _download_and_extract_csv_gz(
-        ANNOTATIONS_CSV_GZ_URL,
-        path_jerby_arnon / "annotations.csv",
-    )
-    _download_and_extract_csv_gz(
-        TPM_CSV_GZ_URL,
-        path_jerby_arnon / "tpm.csv",
-    )
