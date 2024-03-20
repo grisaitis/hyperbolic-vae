@@ -12,6 +12,7 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import Dataset
 
+from hyperbolic_vae.config import DATA_PATH
 from hyperbolic_vae.util import ColoredFormatter
 
 logger = logging.getLogger(__name__)
@@ -21,8 +22,9 @@ ANNOTATIONS_CSV_GZ_URL = (
 )
 COUNTS_CSV_GZ_URL = "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE115nnn/GSE115978/suppl/GSE115978%5Fcounts.csv.gz"
 TPM_CSV_GZ_URL = "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE115nnn/GSE115978/suppl/GSE115978%5Ftpm.csv.gz"
-ANNOTATIONS_CSV_PATH = Path("/home/jupyter/hyperbolic-vae/data/jerby_arnon/GSE115978_cell.annotations.csv")
-TPM_CSV_PATH = Path("/home/jupyter/hyperbolic-vae/data/jerby_arnon/GSE115978_tpm.csv")
+ANNOTATIONS_CSV_PATH = DATA_PATH / "jerby_arnon/annotations.csv"
+COUNTS_CSV_PATH = DATA_PATH / "jerby_arnon/counts.csv"
+TPM_CSV_PATH = DATA_PATH / "jerby_arnon/tpm.csv"
 
 
 columns = types.SimpleNamespace(
