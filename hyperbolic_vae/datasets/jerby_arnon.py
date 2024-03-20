@@ -22,9 +22,10 @@ ANNOTATIONS_CSV_GZ_URL = (
 )
 COUNTS_CSV_GZ_URL = "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE115nnn/GSE115978/suppl/GSE115978%5Fcounts.csv.gz"
 TPM_CSV_GZ_URL = "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE115nnn/GSE115978/suppl/GSE115978%5Ftpm.csv.gz"
-ANNOTATIONS_CSV_PATH = DATA_PATH / "jerby_arnon/annotations.csv"
-COUNTS_CSV_PATH = DATA_PATH / "jerby_arnon/counts.csv"
-TPM_CSV_PATH = DATA_PATH / "jerby_arnon/tpm.csv"
+JERBY_ARNON_DATA_PATH = DATA_PATH / "jerby_arnon"
+ANNOTATIONS_CSV_PATH = JERBY_ARNON_DATA_PATH / "annotations.csv"
+COUNTS_CSV_PATH = JERBY_ARNON_DATA_PATH / "counts.csv"
+TPM_CSV_PATH = JERBY_ARNON_DATA_PATH / "tpm.csv"
 
 
 columns = types.SimpleNamespace(
@@ -199,6 +200,15 @@ def get_fake_dataset(
 ) -> RNASeqAnnotatedDataset:
     df_rnaseq, df_annotations = make_fake_dataframes(n_samples, n_genes)
     return RNASeqAnnotatedDataset(df_rnaseq, df_annotations, rnaseq_normalize_method)
+
+
+def _download_and_extract_csv_gz(url: str, save_path: Path) -> None:
+    with urllib.request.urlopen(url) as response:
+        compressed_file = io.BytesIO(response.read())
+    with gzip.open(compressed_file, "rb") as gz:
+        decompressed_content = gz.read()
+    with open(save_path, "wb") as f_out:
+        f_out.write(decompressed_content)
 
 
 if __name__ == "__main__":
