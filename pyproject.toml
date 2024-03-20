@@ -26,6 +26,7 @@ fsspec = "2023.6.0"
 imageio = "^2.34.0"
 geoopt = {git = "https://github.com/geoopt/geoopt.git", rev = "a41c09b7"}
 # pvae = { path = "../pvae", develop = true }
+pyarrow = "^15.0.2"
 
 [tool.poetry.dev-dependencies]
 black = "*"
