@@ -212,7 +212,7 @@ class VisualizeVAEEuclideanLatentSpace(Callback):
                     z[0, 0] = torch.tensor(z1)
                     z[0, 1] = torch.tensor(z2)
                     # generate images
-                    img = pl_module.vae.decoder(z)
+                    img = pl_module.decoder(z)
                     images.append(img)
         pl_module.train()
         return images
@@ -291,13 +291,11 @@ class VisualizeVAEEuclideanValidationSetEncodings(Callback):
         return mu.cpu().numpy()
 
     def get_encodings_as_dataframe(self, vae_experiment, data_loader_val):
-        df = pd.DataFrame(columns=["i_batch", "mu_0", "mu_1"])
+        df_list = []
         for i, batch in enumerate(data_loader_val):
-            try:
-                input_tensors, labels = batch["rnaseq"], batch["cell_type_series"]
-            except:
-                input_tensors, labels = batch
+            input_tensors, labels = batch
             mu = self.get_encodings(input_tensors, vae_experiment)
             df_batch = pd.DataFrame({"label": labels, "mu_0": mu[:, 0], "mu_1": mu[:, 1]})
-            df = pd.concat([df, df_batch], ignore_index=True)
+            df_list.append(df_batch)
+        df = pd.concat(df_list, ignore_index=True)
         return df

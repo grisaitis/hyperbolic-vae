@@ -8,7 +8,7 @@ from hyperbolic_vae.config import DATA_PATH
 transform = transforms.Compose(
     [
         transforms.ToTensor(),
-        transforms.Pad(2),
+        # transforms.Pad(2),
         # transforms.Normalize((0.1307,), (0.3081,)),
     ]
 )
@@ -26,3 +26,13 @@ mnist_data_module = pl.LightningDataModule.from_datasets(
     batch_size=256,
     num_workers=4,
 )
+
+def make_data_module(batch_size: int, num_workers: int):
+    mnist_data_module = pl.LightningDataModule.from_datasets(
+        train_dataset=dataset_train,
+        val_dataset=dataset_val,
+        test_dataset=dataset_test,
+        batch_size=batch_size,
+        num_workers=num_workers,
+    )
+    return mnist_data_module

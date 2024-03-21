@@ -95,11 +95,10 @@ class RNASeqAnnotatedDataset(Dataset):
     def __len__(self):
         return len(self.df_annotations)
 
-    def __getitem__(self, idx):
-        return {
-            "rnaseq": torch.tensor(self.df_rnaseq.iloc[idx], dtype=torch.float),
-            "cell_type_series": self.df_annotations[columns.CELL_TYPE].iloc[idx],
-        }
+    def __getitem__(self, idx) -> tuple[torch.Tensor, pd.Series]:
+        rnaseq = torch.tensor(self.df_rnaseq.iloc[idx].values, dtype=torch.float)
+        cell_type_series = self.df_annotations[columns.CELL_TYPE].iloc[idx]
+        return rnaseq, cell_type_series
 
 
 def _read_annotations(path_csv: Path) -> pd.DataFrame:
@@ -209,6 +208,27 @@ def _download_and_extract_csv_gz(url: str, save_path: Path) -> None:
         decompressed_content = gz.read()
     with open(save_path, "wb") as f_out:
         f_out.write(decompressed_content)
+
+
+def make_rnaseq_data_module(
+    dataset: RNASeqAnnotatedDataset, batch_size: int, num_workers: int
+) -> pl.LightningDataModule:
+    train_size = int(0.7 * len(dataset))
+    val_size = int(0.15 * len(dataset))
+    test_size = len(dataset) - train_size - val_size
+    dataset_train, dataset_val, dataset_test = torch.utils.data.random_split(
+        dataset,
+        [train_size, val_size, test_size],
+        generator=torch.Generator().manual_seed(42),
+    )
+    data_module = pl.LightningDataModule.from_datasets(
+        train_dataset=dataset_train,
+        val_dataset=dataset_val,
+        test_dataset=dataset_test,
+        batch_size=batch_size,
+        num_workers=num_workers,
+    )
+    return data_module
 
 
 if __name__ == "__main__":

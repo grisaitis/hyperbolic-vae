@@ -126,7 +126,7 @@ class ExpMap0(nn.Module):
         super().__init__()
         self.manifold = manifold
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
+    def forward(self, input: torch.Tensor) -> geoopt.ManifoldTensor:
         return self.manifold.expmap0(input)
 
 
