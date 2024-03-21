@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 
 import geoopt
 import pytorch_lightning as pl
@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 from torch.distributions.negative_binomial import NegativeBinomial
 
+import hyperbolic_vae
+import hyperbolic_vae.layers
 from hyperbolic_vae.distributions.wrapped_normal import WrappedNormal
 from hyperbolic_vae.layers import ExpMap0
 
@@ -60,6 +62,7 @@ class BaseVAE(pl.LightningModule, ABC):
 
     @abstractmethod
     def _construct_decoder(self):
+        # uses self.decoder_first_op
         # differs for 1d vs 2d
         pass
 
@@ -79,7 +82,6 @@ class BaseVAE(pl.LightningModule, ABC):
     def forward(self, x: torch.Tensor):
         mu, scale = self.encode(x)
         z = self.sample_posterior(mu, scale)
-        res_first_decoder_step = self.decoder_first_op(z)
         output = self.decoder(z)
         return mu, scale, z, output
 
@@ -152,8 +154,13 @@ class BaseVAEHyperpolic(BaseVAE):
         # dist = WrappedNormal(mu, scale, self.manifold)
         # z = dist.rsample()
         # or...
-        z = self.manifold.wrapped_normal(*mu.shape, mean=mu, std=scale, device=mu.device)
+        z = self.manifold.wrapped_normal(*mu.shape, mean=mu, std=scale)
         return z
+
+    def _construct_decoder_first_op(self):
+        self.decoder_first_op = hyperbolic_vae.layers.GeodesicLayer(
+            self.latent_dim, self.hidden_layer_dim, self.manifold
+        )
 
 
 class BaseVAEEuclidean(BaseVAE):
