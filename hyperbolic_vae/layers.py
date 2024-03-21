@@ -145,3 +145,64 @@ class MobiusLayer(RiemannianLayer):
     def forward(self, input):
         res = self.manifold.mobius_matvec(self.weight, input)
         return res
+
+
+class Distance2PoincareHyperplanes(torch.nn.Module):
+    """
+    source:
+    https://github.com/geoopt/geoopt/blob/master/examples/hyperbolic_multiclass_classification.ipynb
+    """
+
+    n = 0
+    # 1D, 2D versions of this class ara available with a one line change
+    # class Distance2PoincareHyperplanes2d(Distance2PoincareHyperplanes):
+    #     n = 2
+
+    def __init__(
+        self,
+        plane_shape: int,
+        num_planes: int,
+        signed=True,
+        squared=False,
+        *,
+        ball,
+        std=1.0,
+    ):
+        super().__init__()
+        self.signed = signed
+        self.squared = squared
+        # Do not forget to save Manifold instance to the Module
+        self.ball = ball
+        self.plane_shape = geoopt.utils.size2shape(plane_shape)
+        self.num_planes = num_planes
+
+        # In a layer we create Manifold Parameters in the same way we do it for
+        # regular pytorch Parameters, there is no difference. But geoopt optimizer
+        # will recognize the manifold and adjust to it
+        self.points = geoopt.ManifoldParameter(torch.empty(num_planes, plane_shape), manifold=self.ball)
+        self.std = std
+        # following best practives, a separate method to reset parameters
+        self.reset_parameters()
+
+    def forward(self, input):
+        input_p = input.unsqueeze(-self.n - 1)
+        points = self.points.permute(1, 0)
+        points = points.view(points.shape + (1,) * self.n)
+
+        distance = self.ball.dist2plane(x=input_p, p=points, a=points, signed=self.signed, dim=-self.n - 2)
+        if self.squared and self.signed:
+            sign = distance.sign()
+            distance = distance**2 * sign
+        elif self.squared:
+            distance = distance**2
+        return distance
+
+    def extra_repr(self):
+        return "plane_shape={plane_shape}, " "num_planes={num_planes}, ".format(**self.__dict__)
+
+    @torch.no_grad()
+    def reset_parameters(self):
+        direction = torch.randn_like(self.points)
+        direction /= direction.norm(dim=-1, keepdim=True)
+        distance = torch.empty_like(self.points[..., 0]).normal_(std=self.std)
+        self.points.set_(self.ball.expmap0(direction * distance.unsqueeze(-1)))

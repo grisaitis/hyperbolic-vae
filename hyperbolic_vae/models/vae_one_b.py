@@ -92,11 +92,16 @@ class VAE(pl.LightningModule):
 
     def _make_decoder_first_op(self) -> nn.Module:
         if self.latent_manifold:
-            return geoopt.layers.stereographic.Distance2StereographicHyperplanes(
-                self.latent_dim,
-                self.hidden_layer_dim,
-                ball=self.latent_manifold,
+            # version 1... we have latent vars clustering weirdly
+            # return geoopt.layers.stereographic.Distance2StereographicHyperplanes(
+            #     self.latent_dim,
+            #     self.hidden_layer_dim,
+            #     ball=self.latent_manifold,
+            # )
+            return hyperbolic_vae.layers.Distance2PoincareHyperplanes(
+                plane_shape=self.latent_dim, num_planes=self.hidden_layer_dim, ball=self.latent_manifold, std=0.1
             )
+            # return nn.Linear(self.latent_dim, self.hidden_layer_dim)
         else:
             return nn.Linear(self.latent_dim, self.hidden_layer_dim)
 
