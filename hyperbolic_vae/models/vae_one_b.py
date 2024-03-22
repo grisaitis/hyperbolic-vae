@@ -58,20 +58,19 @@ class VAE(pl.LightningModule):
         logger.info("decoder:\n%s", self.decoder)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        logger.debug("type(x): %s", type(x))
-        logger.debug("if tensor, shape of x: %s", x.shape if isinstance(x, torch.Tensor) else None)
+        # assert x.shape == (self.batch_size,) + self.input_size, x.shape
         h = self.encoder(x)
         mu = self.mu(h)
         # scale = self.scale(h)
         scale = torch.ones_like(mu)
-        logger.debug("mu.shape: %s", mu.shape)
-        logger.debug("mu (first 5): %s", mu[:5])
+        # assert mu.shape == (self.batch_size, self.latent_dim), mu.shape
+        # logger.debug("mu (first 5): %s", mu[:5])
         if self.latent_manifold:
             # z = self.latent_manifold.wrapped_normal(*mu.shape, mean=mu, std=scale)  # results in "ERROR: Graphs differed across invocations!"
-            z_dist = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
+            qz_x = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
                 loc=mu, scale=scale, manifold=self.latent_manifold
             )
-            z = z_dist.rsample()
+            z = qz_x.rsample()
         elif self.latent_manifold and False:
             mu = self.latent_manifold.logmap0(mu)
             z = torch.distributions.Normal(loc=mu, scale=scale).rsample()
