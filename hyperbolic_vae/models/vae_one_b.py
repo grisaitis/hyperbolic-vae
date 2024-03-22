@@ -42,7 +42,9 @@ class VAE(pl.LightningModule):
             nn.Linear(self.input_features, self.hidden_layer_dim),
             self.activation_class(),
         )
+        logger.info("encoder:\n%s", self.encoder)
         self.mu = self._make_mu()
+        logger.info("mu:\n%s", self.mu)
         # self.scale = nn.Sequential(
         #     nn.Linear(self.hidden_layer_dim, self.latent_dim),
         #     nn.Softplus(),
@@ -53,6 +55,7 @@ class VAE(pl.LightningModule):
             nn.Linear(self.hidden_layer_dim, self.input_features),
             *self._make_decoder_last_ops(),
         )
+        logger.info("decoder:\n%s", self.decoder)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         logger.debug("type(x): %s", type(x))
