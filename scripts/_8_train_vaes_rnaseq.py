@@ -81,7 +81,6 @@ if __name__ == "__main__":
     logger.setLevel("DEBUG")
     logging.getLogger("hyperbolic_vae").setLevel("DEBUG")
     logging.getLogger("hyperbolic_vae.datasets.jerby_arnon").setLevel("DEBUG")
-    # logging.getLogger("hyperbolic_vae.models.vae_hyperbolic_rnaseq").setLevel("DEBUG")
     sh = logging.StreamHandler()
     sh.setFormatter(ColoredFormatter("%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s"))
     logging.getLogger().addHandler(sh)
