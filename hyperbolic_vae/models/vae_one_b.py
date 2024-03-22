@@ -153,7 +153,7 @@ class VAE(pl.LightningModule):
         logger.debug("t1.shape: %s", t1.shape)
         return 0.5 * (var_ratio + t1 - 1 - var_ratio.log()).mean()
 
-    def loss_kl(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+    def loss_kl_old_2(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         qz = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
             loc=self.latent_manifold.origin(self.latent_dim),
             scale=torch.ones_like(scale),
@@ -165,6 +165,13 @@ class VAE(pl.LightningModule):
             manifold=self.latent_manifold,
         )
         return (qz_x.log_prob(z).exp() * (qz_x.log_prob(z) - qz.log_prob(z))).mean()
+
+    def loss_kl(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+        if self.latent_manifold:
+            mu = self.latent_manifold.logmap0(mu)
+        qz_x = torch.distributions.Normal(loc=mu, scale=scale)
+        qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=torch.ones_like(scale))
+        return torch.distributions.kl.kl_divergence(qz_x, qz).mean()
 
     def loss(self, batch: tuple) -> dict:
         x, class_labels = batch
