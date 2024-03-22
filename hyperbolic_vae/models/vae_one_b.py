@@ -121,7 +121,13 @@ class VAE(pl.LightningModule):
             )
 
     def loss_recon(self, x: torch.Tensor, output: torch.Tensor):
-        return torch.nn.functional.mse_loss(output, x, reduction="mean")
+        if x[0].numel() == 28 * 28:
+            logging.debug("loss function: MSE")
+            return torch.nn.functional.mse_loss(output, x, reduction="mean")
+        logging.debug("loss function: negative log likelihood of dirichlet")
+        # likelihood = torch.distributions.NegativeBinomial(total_count=1, probs=output)
+        likelihood = torch.distributions.RelaxedBernoulli(temperature=torch.Tensor([0.5]), probs=output)
+        return -likelihood.log_prob(x).mean()
 
     def loss_kl_old(self, mu: torch.Tensor | geoopt.ManifoldTensor, scale: torch.Tensor) -> torch.Tensor:
         """
