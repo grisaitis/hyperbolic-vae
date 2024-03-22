@@ -29,6 +29,7 @@ def train(
     hidden_layer_dim: int,
     learning_rate: float,
     beta: float,
+    max_epochs: int,
 ):
     input_data_shape = next(iter(data_module.train_dataloader()))[0].shape[1:]
     logger.info(f"input_data_shape from dataset: {input_data_shape}")
@@ -50,7 +51,7 @@ def train(
         default_root_dir=os.path.join(CHECKPOINTS_PATH, "vae_b_rnaseq"),
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         devices=1,
-        max_epochs=50,
+        max_epochs=max_epochs,
         callbacks=[
             ModelCheckpoint(save_weights_only=True, every_n_epochs=10),
             # GenerateCallback.from_data_module(data_module, every_n_epochs=1),
@@ -92,4 +93,5 @@ if __name__ == "__main__":
             hidden_layer_dim=16,
             learning_rate=1e-3,
             beta=1.0,
+            max_epochs=200,
         )
