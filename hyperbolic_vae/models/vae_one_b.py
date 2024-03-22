@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 
 import hyperbolic_vae
-from hyperbolic_vae.distributions.wrapped_normal import WrappedNormal
+import hyperbolic_vae.distributions.wrapped_normal
 import hyperbolic_vae.layers
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,9 @@ class VAE(pl.LightningModule):
         logger.debug("mu (first 5): %s", mu[:5])
         if self.latent_manifold:
             # z = self.latent_manifold.wrapped_normal(*mu.shape, mean=mu, std=scale)  # results in "ERROR: Graphs differed across invocations!"
-            z_dist = WrappedNormal(loc=mu, scale=scale, manifold=self.latent_manifold)
+            z_dist = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
+                loc=mu, scale=scale, manifold=self.latent_manifold
+            )
             z = z_dist.rsample()
         elif self.latent_manifold and False:
             mu = self.latent_manifold.logmap0(mu)
@@ -117,7 +119,7 @@ class VAE(pl.LightningModule):
     def loss_recon(self, x: torch.Tensor, output: torch.Tensor):
         return torch.nn.functional.mse_loss(output, x, reduction="mean")
 
-    def loss_kl(self, mu: torch.Tensor | geoopt.ManifoldTensor, scale: torch.Tensor) -> torch.Tensor:
+    def loss_kl_old(self, mu: torch.Tensor | geoopt.ManifoldTensor, scale: torch.Tensor) -> torch.Tensor:
         """
         # general formula for posterior in euclidean space:
         kl = -0.5 * torch.sum(1 + scale - mu.pow(2) - scale.exp(), dim=-1)
@@ -141,11 +143,24 @@ class VAE(pl.LightningModule):
         logger.debug("t1.shape: %s", t1.shape)
         return 0.5 * (var_ratio + t1 - 1 - var_ratio.log()).mean()
 
+    def loss_kl(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+        qz = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
+            loc=self.latent_manifold.origin(self.latent_dim),
+            scale=torch.ones_like(scale),
+            manifold=self.latent_manifold,
+        )
+        qz_x = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
+            loc=mu,
+            scale=scale,
+            manifold=self.latent_manifold,
+        )
+        return (qz_x.log_prob(z).exp() * (qz_x.log_prob(z) - qz.log_prob(z))).mean()
+
     def loss(self, batch: tuple) -> dict:
         x, class_labels = batch
         mu, scale, z, output = self.forward(x)
         loss_recon = self.loss_recon(x, output)
-        loss_kl = self.loss_kl(mu, scale)
+        loss_kl = self.loss_kl(mu, scale, z)
         loss_total = loss_recon + self.beta * loss_kl
         logger.info("loss values:\n recon: %s\n  kl: %s\n  total: %s", loss_recon, loss_kl, loss_total)
         return {
