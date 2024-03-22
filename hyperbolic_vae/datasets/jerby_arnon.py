@@ -76,21 +76,13 @@ class RNASeqAnnotatedDataset(Dataset):
         assert df_annotations.index.name == columns.SINGLE_CELL_ID
         assert df_rnaseq.index.equals(df_annotations.index)
         self.df_rnaseq = df_rnaseq
-        if rnaseq_normalize_method is None:
-            pass
-        elif rnaseq_normalize_method == "sum_to_one":
-            self.df_rnaseq = df_rnaseq.div(df_rnaseq.sum(axis=1), axis=0)
-            print(self.df_rnaseq.sum(axis=0))
-            print(self.df_rnaseq.sum(axis=1))
-        elif rnaseq_normalize_method == "sum_to_million":
-            self.df_rnaseq = df_rnaseq.div(df_rnaseq.sum(axis=1), axis=0) * 1_000_000
-        else:
-            raise ValueError(f"rnaseq_normalize_method {rnaseq_normalize_method} not recognized")
+        if rnaseq_normalize_method:
+            self.df_rnaseq = normalize_rnaseq(self.df_rnaseq, rnaseq_normalize_method)
         self.df_annotations = df_annotations
-        logger.debug("df_rnaseq.iloc[:10, :10]:\n%s", df_rnaseq.iloc[:10, :10])
-        logger.debug("df_rnaseq.sum(axis=0):\n%s", df_rnaseq.sum(axis=0))
-        logger.debug("df_rnaseq.sum(axis=1):\n%s", df_rnaseq.sum(axis=1))
-        logger.debug("df_annotations.head():\n%s", df_annotations.head())
+        logger.debug("df_rnaseq.iloc[:10, :10]:\n%s", self.df_rnaseq.iloc[:10, :10])
+        logger.debug("df_rnaseq.sum(axis=0):\n%s", self.df_rnaseq.sum(axis=0))
+        logger.debug("df_rnaseq.sum(axis=1):\n%s", self.df_rnaseq.sum(axis=1))
+        logger.debug("df_annotations.head():\n%s", self.df_annotations.head())
 
     def __len__(self):
         return len(self.df_annotations)
@@ -99,6 +91,15 @@ class RNASeqAnnotatedDataset(Dataset):
         rnaseq = torch.tensor(self.df_rnaseq.iloc[idx].values, dtype=torch.float)
         cell_type_series = self.df_annotations[columns.CELL_TYPE].iloc[idx]
         return rnaseq, cell_type_series
+
+
+def normalize_rnaseq(df_rnaseq: pd.DataFrame, method: str) -> pd.DataFrame:
+    if method == "sum_to_one":
+        return df_rnaseq.div(df_rnaseq.sum(axis=1), axis=0)
+    elif method == "sum_to_million":
+        return df_rnaseq.div(df_rnaseq.sum(axis=1), axis=0) * 1_000_000
+    else:
+        raise ValueError(f"rnaseq_normalize_method {method} not recognized")
 
 
 def _read_annotations(path_csv: Path) -> pd.DataFrame:
