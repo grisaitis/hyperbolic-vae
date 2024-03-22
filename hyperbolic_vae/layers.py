@@ -185,11 +185,17 @@ class Distance2PoincareHyperplanes(torch.nn.Module):
         self.reset_parameters()
 
     def forward(self, input):
+        logger.debug("input shape, at beginning: %s", input.shape)
         input_p = input.unsqueeze(-self.n - 1)
         points = self.points.permute(1, 0)
         points = points.view(points.shape + (1,) * self.n)
 
+        logger.debug("input_p shape: %s", input_p.shape)
+        logger.debug("points shape: %s", points.shape)
         distance = self.ball.dist2plane(x=input_p, p=points, a=points, signed=self.signed, dim=-self.n - 2)
+        logger.debug("distance shape: %s", distance.shape)
+        logger.debug("distance mean, std: %s, %s", distance.mean(dim=0), distance.std(dim=0))
+        # logger.debug("distance (first 5): %s", distance[0, :5])
         if self.squared and self.signed:
             sign = distance.sign()
             distance = distance**2 * sign
@@ -206,3 +212,6 @@ class Distance2PoincareHyperplanes(torch.nn.Module):
         direction /= direction.norm(dim=-1, keepdim=True)
         distance = torch.empty_like(self.points[..., 0]).normal_(std=self.std)
         self.points.set_(self.ball.expmap0(direction * distance.unsqueeze(-1)))
+        logger.debug("points shape: %s", self.points.shape)
+        logger.debug("points mean, std: %s, %s", self.points.mean(dim=0), self.points.std(dim=0))
+        logger.debug("points, first 5:\n%s", self.points[:5])
