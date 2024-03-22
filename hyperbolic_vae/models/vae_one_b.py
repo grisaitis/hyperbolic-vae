@@ -43,10 +43,10 @@ class VAE(pl.LightningModule):
             self.activation_class(),
         )
         self.mu = self._make_mu()
-        self.scale = nn.Sequential(
-            nn.Linear(self.hidden_layer_dim, self.latent_dim),
-            nn.Softplus(),
-        )
+        # self.scale = nn.Sequential(
+        #     nn.Linear(self.hidden_layer_dim, self.latent_dim),
+        #     nn.Softplus(),
+        # )
         self.decoder = nn.Sequential(
             self._make_decoder_first_op(),
             self.activation_class(),
@@ -59,7 +59,8 @@ class VAE(pl.LightningModule):
         logger.debug("if tensor, shape of x: %s", x.shape if isinstance(x, torch.Tensor) else None)
         h = self.encoder(x)
         mu = self.mu(h)
-        scale = self.scale(h)
+        # scale = self.scale(h)
+        scale = torch.ones_like(mu)
         logger.debug("mu.shape: %s", mu.shape)
         logger.debug("mu (first 5): %s", mu[:5])
         if self.latent_manifold:
