@@ -165,7 +165,7 @@ class Distance2PoincareHyperplanes(torch.nn.Module):
         signed=True,
         squared=False,
         *,
-        ball,
+        ball: geoopt.PoincareBall,
         std=1.0,
     ):
         super().__init__()
