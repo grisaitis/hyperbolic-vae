@@ -105,7 +105,7 @@ class VAE(pl.LightningModule):
             #     ball=self.latent_manifold,
             # )
             return hyperbolic_vae.layers.Distance2PoincareHyperplanes(
-                plane_shape=self.latent_dim, num_planes=self.hidden_layer_dim, ball=self.latent_manifold, std=0.1
+                plane_shape=self.latent_dim, num_planes=self.hidden_layer_dim, ball=self.latent_manifold
             )
             # return nn.Linear(self.latent_dim, self.hidden_layer_dim)
         else:
