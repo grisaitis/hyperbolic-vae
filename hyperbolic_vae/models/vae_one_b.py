@@ -77,9 +77,10 @@ class VAE(pl.LightningModule):
             z = self.latent_manifold.expmap0(z)
         else:
             z = torch.distributions.Normal(loc=mu, scale=scale).rsample()
-        logger.debug("z.shape: %s", z.shape)
-        logger.debug("z (first 5): %s", z[:5])
+        # logger.debug("z.shape: %s", z.shape)
+        # logger.debug("z (first 5): %s", z[:5])
         assert z.shape == mu.shape, f"z.shape: {z.shape}, mu.shape: {mu.shape}"
+        # z = self.latent_manifold.logmap0(z)
         output = self.decoder(z)
         return mu, scale, z, output
 
