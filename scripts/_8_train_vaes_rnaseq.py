@@ -32,14 +32,6 @@ def train(
 ):
     input_data_shape = next(iter(data_module.train_dataloader()))[0].shape[1:]
     logger.info(f"input_data_shape from dataset: {input_data_shape}")
-    # vae = VAEHyperbolicRNASeq(
-    #     input_data_shape=input_data_shape,
-    #     latent_dim=latent_dim,
-    #     manifold_curvature=latent_curvature,
-    #     hidden_layer_dim=hidden_layer_dim,
-    #     learning_rate=learning_rate,
-    #     beta=beta,
-    # )
     vae = vae_one_b.VAE(
         input_size=input_data_shape,
         hidden_layer_dim=hidden_layer_dim,
@@ -61,7 +53,7 @@ def train(
         max_epochs=50,
         callbacks=[
             ModelCheckpoint(save_weights_only=True, every_n_epochs=10),
-            GenerateCallback.from_data_module(data_module, every_n_epochs=1),
+            # GenerateCallback.from_data_module(data_module, every_n_epochs=1),
             LearningRateMonitor("epoch"),
             VisualizeEncodingsValidationSet(
                 path_write_image=PROJECT_ROOT / "figures/latent_space_jerby_arnon.png",
@@ -79,7 +71,7 @@ def train(
 
 if __name__ == "__main__":
     logger.setLevel("DEBUG")
-    logging.getLogger("hyperbolic_vae").setLevel("DEBUG")
+    logging.getLogger("hyperbolic_vae").setLevel("INFO")
     logging.getLogger("hyperbolic_vae.datasets.jerby_arnon").setLevel("DEBUG")
     sh = logging.StreamHandler()
     sh.setFormatter(ColoredFormatter("%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s"))
@@ -87,11 +79,11 @@ if __name__ == "__main__":
 
     pl.seed_everything(42)
 
-    # jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset("sum_to_one")
+    jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset("sum_to_one")
     # jerby_arnon_dataset = jerby_arnon.get_fake_dataset(100, 200, "sum_to_one")
-    # jerby_arnon_dataset = jerby_arnon.get_subset_jerby_arnon_dataset(100, 200, "sum_to_one")
-    # data_module = jerby_arnon.make_rnaseq_data_module(jerby_arnon_dataset, batch_size=64, num_workers=0)
-    data_module = mnist_v2.make_data_module(batch_size=64, num_workers=0)
+    # jerby_arnon_dataset = jerby_arnon.get_subset_jerby_arnon_dataset(7000, 10, "sum_to_one")
+    data_module = jerby_arnon.make_rnaseq_data_module(jerby_arnon_dataset, batch_size=64, num_workers=0)
+    # data_module = mnist_v2.make_data_module(batch_size=64, num_workers=0)
     with torch.autograd.detect_anomaly(check_nan=True):
         train(
             data_module=data_module,
@@ -99,5 +91,5 @@ if __name__ == "__main__":
             latent_curvature=0.4,
             hidden_layer_dim=16,
             learning_rate=1e-3,
-            beta=0.01,
+            beta=1.0,
         )
