@@ -84,8 +84,9 @@ def train(
 
 if __name__ == "__main__":
     logger.setLevel("DEBUG")
-    logging.getLogger("hyperbolic_vae").setLevel("INFO")
+    logging.getLogger("hyperbolic_vae").setLevel("DEBUG")
     logging.getLogger("hyperbolic_vae.datasets.jerby_arnon").setLevel("DEBUG")
+    logging.getLogger("hyperbolic_vae.layers").setLevel("DEBUG")
     sh = logging.StreamHandler()
     sh.setFormatter(ColoredFormatter("%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s"))
     logging.getLogger().addHandler(sh)
@@ -101,9 +102,9 @@ if __name__ == "__main__":
         train(
             data_module=data_module,
             latent_dim=2,
-            latent_curvature=0.4,
-            hidden_layer_dim=16,
+            latent_curvature=1.0,
+            hidden_layer_dim=200,  # default for PVAE was 100, 800 in demo
             learning_rate=1e-3,
             beta=1.0,
-            max_epochs=200,
+            max_epochs=100,
         )
