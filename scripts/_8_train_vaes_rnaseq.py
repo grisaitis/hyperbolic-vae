@@ -51,19 +51,9 @@ def train(
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if latent_curvature:
-        visualize_encodings = VisualizeEncodingsValidationSet(
-            path_write_image=PROJECT_ROOT / "figures/latent_space.png",
-            range_x=(-(latent_curvature**-0.5), latent_curvature**-0.5),
-            range_y=(-(latent_curvature**-0.5), latent_curvature**-0.5),
-            every_n_epochs=1,
-        )
+        latent_range = (-(latent_curvature**-0.5), latent_curvature**-0.5)
     else:
-        visualize_encodings = VisualizeEncodingsValidationSet(
-            path_write_image=PROJECT_ROOT / "figures/latent_space.png",
-            range_x=(-4, 4),
-            range_y=(-4, 4),
-            every_n_epochs=1,
-        )
+        latent_range = (-4, 4)
     trainer = pl.Trainer(
         default_root_dir=os.path.join(CHECKPOINTS_PATH, "vae_b_rnaseq"),
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
@@ -73,8 +63,12 @@ def train(
             ModelCheckpoint(save_weights_only=True, every_n_epochs=10),
             GenerateCallback.from_data_module(data_module, every_n_epochs=1),
             LearningRateMonitor("epoch"),
-            visualize_encodings,
-            VisualizeVAEEuclideanLatentSpace(),
+            VisualizeEncodingsValidationSet(
+                path_write_image=PROJECT_ROOT / "figures/latent_space_jerby_arnon.png",
+                range_x=latent_range,
+                range_y=latent_range,
+            ),
+            # VisualizeVAEEuclideanLatentSpace(range_start=latent_range[0], range_end=latent_range[1], steps=21),
         ],
     )
 
