@@ -162,6 +162,7 @@ class Distance2PoincareHyperplanes(torch.nn.Module):
         self,
         plane_shape: int,
         num_planes: int,
+        bias: bool = True,
         signed=True,
         squared=False,
         *,
@@ -175,32 +176,37 @@ class Distance2PoincareHyperplanes(torch.nn.Module):
         self.ball = ball
         self.plane_shape = geoopt.utils.size2shape(plane_shape)
         self.num_planes = num_planes
+        self.bias = bias
 
         # In a layer we create Manifold Parameters in the same way we do it for
         # regular pytorch Parameters, there is no difference. But geoopt optimizer
         # will recognize the manifold and adjust to it
         self.points = geoopt.ManifoldParameter(torch.empty(num_planes, plane_shape), manifold=self.ball)
+        if bias:
+            self.bias = Parameter(torch.empty(num_planes))
+        else:
+            self.register_parameter("bias", None)
         self.std = std
         # following best practives, a separate method to reset parameters
         self.reset_parameters()
 
     def forward(self, input):
-        logger.debug("input shape, at beginning: %s", input.shape)
         input_p = input.unsqueeze(-self.n - 1)
         points = self.points.permute(1, 0)
         points = points.view(points.shape + (1,) * self.n)
 
-        logger.debug("input_p shape: %s", input_p.shape)
-        logger.debug("points shape: %s", points.shape)
+        # logger.debug("input_p shape: %s", input_p.shape)
+        # logger.debug("points shape: %s", points.shape)
         distance = self.ball.dist2plane(x=input_p, p=points, a=points, signed=self.signed, dim=-self.n - 2)
-        logger.debug("distance shape: %s", distance.shape)
-        logger.debug("distance mean, std: %s, %s", distance.mean(dim=0), distance.std(dim=0))
+        # logger.debug("distance mean, std: %s, %s", distance.mean(), distance.std())
         # logger.debug("distance (first 5): %s", distance[0, :5])
         if self.squared and self.signed:
             sign = distance.sign()
             distance = distance**2 * sign
         elif self.squared:
             distance = distance**2
+        if self.bias is not None:
+            distance = distance + self.bias
         return distance
 
     def extra_repr(self):
@@ -215,3 +221,8 @@ class Distance2PoincareHyperplanes(torch.nn.Module):
         logger.debug("points shape: %s", self.points.shape)
         logger.debug("points mean, std: %s, %s", self.points.mean(dim=0), self.points.std(dim=0))
         logger.debug("points, first 5:\n%s", self.points[:5])
+        if self.bias is not None:
+            # fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
+            # bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            bound = 1.0
+            init.uniform_(self.bias, -bound, bound)
