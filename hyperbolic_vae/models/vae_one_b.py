@@ -205,7 +205,10 @@ class VAE(pl.LightningModule):
         loss_recon = self.loss_recon(x, output)
         loss_kl = self.loss_kl_log_prob(mu, scale, z)
         loss_total = loss_recon + self.beta * loss_kl
-        logger.info("loss values:\n recon: %s\n  kl: %s\n  total: %s", loss_recon, loss_kl, loss_total)
+        logger.info(
+            "loss values:\n recon: %s\n  kl: %s\n  total: %s", loss_recon.item(), loss_kl.item(), loss_total.item()
+        )
+        logger.info("z mean and std: %s, %s", z.mean(dim=0), z.std())
         return {
             "loss_reconstruction": loss_recon,
             "loss_kl": loss_kl,
