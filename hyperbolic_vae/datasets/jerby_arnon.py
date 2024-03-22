@@ -148,12 +148,14 @@ def _read_tpm(path_csv: Path, skiprows=None) -> pd.DataFrame:
 
 def _filter_gene_symbols(df_tpm: pd.DataFrame) -> pd.DataFrame:
     # remove mitochondrial gene symbols
-    mitochondrial_gene_symbols = df_tpm.columns[df_tpm.columns.str.startswith("MT-")]
-    logger.info("dropping %s mitochondrial gene symbols", len(mitochondrial_gene_symbols))
+    mitochondrial_gene_symbols = df_tpm.columns[df_tpm.columns.str.startswith("MT")]
+    logger.debug("dropping %s mitochondrial gene symbols", len(mitochondrial_gene_symbols))
     df_tpm = df_tpm.drop(columns=mitochondrial_gene_symbols)
     # identify and remove gene symbols which are zero more than 90% of the time
+    logger.debug("gene zero rates with eq: %s", df_tpm.eq(0).mean())
+    logger.debug("gene zero rates with (df == 0): %s", (df_tpm == 0).mean())
     zero_genes = df_tpm.columns[df_tpm.eq(0).mean() > 0.9]
-    logger.info("dropping %s gene symbols which are zero more than 90%% of the time", len(zero_genes))
+    logger.debug("dropping %s gene symbols which are zero more than 90%% of the time", len(zero_genes))
     df_tpm = df_tpm.drop(columns=zero_genes)
     return df_tpm
 
