@@ -152,31 +152,58 @@ class VAE(pl.LightningModule):
         logger.debug("t1.shape: %s", t1.shape)
         return 0.5 * (var_ratio + t1 - 1 - var_ratio.log()).mean()
 
-    def loss_kl_old_2(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
-        qz = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
-            loc=self.latent_manifold.origin(self.latent_dim),
-            scale=torch.ones_like(scale),
-            manifold=self.latent_manifold,
-        )
-        qz_x = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
-            loc=mu,
-            scale=scale,
-            manifold=self.latent_manifold,
-        )
-        return (qz_x.log_prob(z).exp() * (qz_x.log_prob(z) - qz.log_prob(z))).mean()
+    def loss_kl_log_prob(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+        # see https://github.com/emilemathieu/pvae/blob/master/pvae/objectives.py#L15
+        if self.latent_manifold:
+            qz = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
+                loc=self.latent_manifold.origin(self.latent_dim),
+                scale=torch.ones_like(scale),
+                manifold=self.latent_manifold,
+            )
+            qz_x = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
+                loc=mu,
+                scale=scale,
+                manifold=self.latent_manifold,
+            )
+        else:
+            qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=torch.ones_like(scale))
+            qz_x = torch.distributions.Normal(loc=mu, scale=scale)
+        qz_x_log_prob_z = qz_x.log_prob(z)
+        qz_x_prob_z = qz_x_log_prob_z.exp()
+        qz_log_prob_z = qz.log_prob(z)
+        return (qz_x_prob_z * (qz_x_log_prob_z - qz_log_prob_z)).mean()
 
-    def loss_kl(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+    def loss_kl_logmap0_analytic(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+        # see https://github.com/emilemathieu/pvae/blob/master/pvae/objectives.py#L15
         if self.latent_manifold:
             mu = self.latent_manifold.logmap0(mu)
         qz_x = torch.distributions.Normal(loc=mu, scale=scale)
         qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=torch.ones_like(scale))
-        return torch.distributions.kl.kl_divergence(qz_x, qz).mean()
+        return torch.distributions.kl_divergence(qz_x, qz).mean()
+
+    def loss_kl_logmap0_log_prob(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+        if self.latent_manifold:
+            mu = self.latent_manifold.logmap0(mu)
+            z = self.latent_manifold.logmap0(z)
+        qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=torch.ones_like(scale))
+        qz_x = torch.distributions.Normal(loc=mu, scale=scale)
+        qz_log_prob_z = qz.log_prob(z).sum(-1)
+        qz_x_log_prob_z = qz_x.log_prob(z).sum(-1)
+        qz_x_prob_z = qz_x_log_prob_z.exp()
+        logger.debug("qz_log_prob_z.shape: %s", qz_log_prob_z.shape)
+        logger.debug("qz_x_log_prob_z.shape: %s", qz_x_log_prob_z.shape)
+        logger.debug("qz_x_prob_z.shape: %s", qz_x_prob_z.shape)
+        res = qz_x_prob_z * (qz_x_log_prob_z - qz_log_prob_z)
+        logger.debug("res.shape: %s", res.shape)
+        res = res.mean()
+        logger.debug("kl divergence: %s", res)
+        return res
 
     def loss(self, batch: tuple) -> dict:
         x, class_labels = batch
         mu, scale, z, output = self.forward(x)
         loss_recon = self.loss_recon(x, output)
-        loss_kl = self.loss_kl(mu, scale, z)
+        loss_kl = self.loss_kl_log_prob(mu, scale, z)
         loss_total = loss_recon + self.beta * loss_kl
         logger.info("loss values:\n recon: %s\n  kl: %s\n  total: %s", loss_recon, loss_kl, loss_total)
         return {
