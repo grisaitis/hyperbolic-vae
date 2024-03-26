@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
+import scipy.stats
 import torch
 from torch.utils.data import Dataset
 
@@ -98,6 +99,9 @@ def normalize_rnaseq(df_rnaseq: pd.DataFrame, method: str) -> pd.DataFrame:
         return df_rnaseq.div(df_rnaseq.sum(axis=1), axis=0)
     elif method == "sum_to_million":
         return df_rnaseq.div(df_rnaseq.sum(axis=1), axis=0) * 1_000_000
+    elif method == "z_score":
+        # see https://stackoverflow.com/a/41713622/781938
+        return df_rnaseq.apply(scipy.stats.zscore)
     else:
         raise ValueError(f"rnaseq_normalize_method {method} not recognized")
 
