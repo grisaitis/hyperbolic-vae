@@ -164,10 +164,21 @@ def _filter_gene_symbols(df_tpm: pd.DataFrame) -> pd.DataFrame:
     return df_tpm
 
 
+def _filter_single_cells(df_rnaseq: pd.DataFrame) -> pd.DataFrame:
+    # remove single cells with more than 90% zero gene expression values
+    very_sparse_single_cells = df_rnaseq.index[df_rnaseq.eq(0).mean(axis=1) > 0.9]
+    logger.debug(
+        "dropping %s single cells with more than 90%% zero gene expression values", len(very_sparse_single_cells)
+    )
+    df_rnaseq = df_rnaseq.drop(index=very_sparse_single_cells)
+    return df_rnaseq
+
+
 def get_pytorch_dataset(rnaseq_normalize_method: str | None) -> RNASeqAnnotatedDataset:
     df_annotations = _read_annotations(ANNOTATIONS_CSV_PATH)
     df_rnaseq = _read_tpm(TPM_CSV_PATH)
     df_rnaseq = _filter_gene_symbols(df_rnaseq)
+    # df_rnaseq = _filter_single_cells(df_rnaseq)
     return RNASeqAnnotatedDataset(df_rnaseq, df_annotations, rnaseq_normalize_method)
 
 
