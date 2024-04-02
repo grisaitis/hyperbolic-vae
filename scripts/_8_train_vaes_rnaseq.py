@@ -26,6 +26,7 @@ def train(
     data_module: pl.LightningDataModule,
     latent_dim: int,
     latent_curvature: float,
+    prior_scale: float,
     hidden_layer_dim: int,
     learning_rate: float,
     beta: float,
@@ -39,6 +40,7 @@ def train(
         hidden_layer_dim=hidden_layer_dim,
         latent_dim=latent_dim,
         latent_curvature=latent_curvature,
+        prior_scale=prior_scale,
         learning_rate=learning_rate,
         beta=beta,
         kl_loss_method=kl_loss_method,
@@ -105,6 +107,7 @@ if __name__ == "__main__":
             data_module=data_module,
             latent_dim=2,
             latent_curvature=1.0,
+            prior_scale=2.0,
             hidden_layer_dim=200,  # default for PVAE was 100, 800 in demo
             learning_rate=1e-3,
             kl_loss_method="logmap0_analytic",
