@@ -254,7 +254,7 @@ class VisualizeVAEEuclideanValidationSetEncodings(Callback):
             buf.seek(0)
             image_array = iio.imread(buf)
             image_array = image_array.transpose(2, 0, 1)
-            str_title = f"{vae_experiment.__class__.__name__}_latent_space"
+            str_title = f"{vae_experiment.__class__.__name__}_posterior_means"
             trainer.logger.experiment.add_image(str_title, image_array, global_step=trainer.global_step)
         vae_experiment.train()
 
