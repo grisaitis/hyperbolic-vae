@@ -34,8 +34,13 @@
 				"ms-toolsai.tensorboard",
 				"GitHub.copilot",
 				"GitHub.copilot-chat",
-				"VisualStudioExptTeam.vscodeintellicode"
-			]
+				"VisualStudioExptTeam.vscodeintellicode",
+				"foxundermoon.shell-format"
+			],
+			"settings": {
+				"tensorBoard.logDirectory": "/workspaces/hyperbolic-vae/checkpoints/vae_b_rnaseq/lightning_logs"
+				// "shellformat.flag": 
+			}
 		}
 	}
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
