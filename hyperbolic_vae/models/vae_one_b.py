@@ -22,6 +22,7 @@ class VAE(pl.LightningModule):
         latent_dim: int,
         latent_curvature: float,
         prior_scale: float,
+        posterior_scale: str,
         learning_rate: float,
         beta: float,
         kl_loss_method: str,
@@ -36,6 +37,7 @@ class VAE(pl.LightningModule):
         self.latent_curvature = latent_curvature
         self.latent_manifold = geoopt.PoincareBall(latent_curvature) if latent_curvature else None
         self.prior_scale = prior_scale
+        self.posterior_scale = posterior_scale
         self.learning_rate = learning_rate
         self.beta = beta
         self.kl_loss_method = kl_loss_method
@@ -49,10 +51,15 @@ class VAE(pl.LightningModule):
         logger.info("encoder:\n%s", self.encoder)
         self.mu = self._make_mu()
         logger.info("mu:\n%s", self.mu)
-        # self.scale = nn.Sequential(
-        #     nn.Linear(self.hidden_layer_dim, self.latent_dim),
-        #     nn.Softplus(),
-        # )
+        if self.posterior_scale == "learned":
+            self.scale = nn.Sequential(
+                nn.Linear(self.hidden_layer_dim, self.latent_dim),
+                nn.Softplus(),
+            )
+        elif self.posterior_scale == "fixed":
+            self.scale = None
+        else:
+            raise ValueError(f"Unrecognized posterior_scale: {self.posterior_scale}")
         self.decoder = nn.Sequential(
             self._make_decoder_first_op(),
             self.activation_class(),
@@ -65,8 +72,10 @@ class VAE(pl.LightningModule):
         # assert x.shape == (self.batch_size,) + self.input_size, x.shape
         h = self.encoder(x)
         mu = self.mu(h)
-        # scale = self.scale(h)
-        scale = torch.ones_like(mu)
+        if self.scale:
+            scale = self.scale(h)
+        else:
+            scale = torch.ones_like(mu)
         # assert mu.shape == (self.batch_size, self.latent_dim), mu.shape
         # logger.debug("mu (first 5): %s", mu[:5])
         if self.latent_manifold:
