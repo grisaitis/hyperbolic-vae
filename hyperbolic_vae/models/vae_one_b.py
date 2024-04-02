@@ -21,6 +21,7 @@ class VAE(pl.LightningModule):
         hidden_layer_dim: int,
         latent_dim: int,
         latent_curvature: float,
+        prior_scale: float,
         learning_rate: float,
         beta: float,
         kl_loss_method: str,
@@ -34,6 +35,7 @@ class VAE(pl.LightningModule):
         self.latent_dim = latent_dim
         self.latent_curvature = latent_curvature
         self.latent_manifold = geoopt.PoincareBall(latent_curvature) if latent_curvature else None
+        self.prior_scale = prior_scale
         self.learning_rate = learning_rate
         self.beta = beta
         self.kl_loss_method = kl_loss_method
@@ -143,6 +145,8 @@ class VAE(pl.LightningModule):
         # we are computing this where p is the posterior and q is the prior
         """
         logger.debug("shapes: mu: %s, scale: %s", mu.shape, scale.shape)
+        if self.prior_scale != 1.0:
+            raise NotImplementedError(f"prior_scale {self.prior_scale} != 1.0 not implemented")
         var_ratio = scale.pow(2).sum(-1)  # shape (64,)
         if self.latent_manifold:
             # mu_norm = self.latent_manifold.norm(self.latent_manifold.origin(self.latent_dim), mu)
@@ -157,10 +161,11 @@ class VAE(pl.LightningModule):
 
     def loss_kl_log_prob(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         # see https://github.com/emilemathieu/pvae/blob/master/pvae/objectives.py#L15
+        scale_qz = torch.ones_like(scale) * self.prior_scale
         if self.latent_manifold:
             qz = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
                 loc=self.latent_manifold.origin(self.latent_dim),
-                scale=torch.ones_like(scale),
+                scale=scale_qz,
                 manifold=self.latent_manifold,
             )
             qz_x = hyperbolic_vae.distributions.wrapped_normal.WrappedNormal(
@@ -169,7 +174,7 @@ class VAE(pl.LightningModule):
                 manifold=self.latent_manifold,
             )
         else:
-            qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=torch.ones_like(scale))
+            qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=scale_qz)
             qz_x = torch.distributions.Normal(loc=mu, scale=scale)
         qz_x_log_prob_z = qz_x.log_prob(z)
         qz_x_prob_z = qz_x_log_prob_z.exp()
@@ -181,14 +186,16 @@ class VAE(pl.LightningModule):
         if self.latent_manifold:
             mu = self.latent_manifold.logmap0(mu)
         qz_x = torch.distributions.Normal(loc=mu, scale=scale)
-        qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=torch.ones_like(scale))
+        scale_qz = torch.ones_like(scale) * self.prior_scale
+        qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=scale_qz)
         return torch.distributions.kl_divergence(qz_x, qz).mean()
 
     def loss_kl_logmap0_log_prob(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         if self.latent_manifold:
             mu = self.latent_manifold.logmap0(mu)
             z = self.latent_manifold.logmap0(z)
-        qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=torch.ones_like(scale))
+        scale_qz = torch.ones_like(scale) * self.prior_scale
+        qz = torch.distributions.Normal(loc=torch.zeros_like(mu), scale=scale_qz)
         qz_x = torch.distributions.Normal(loc=mu, scale=scale)
         qz_log_prob_z = qz.log_prob(z).sum(-1)
         qz_x_log_prob_z = qz_x.log_prob(z).sum(-1)
