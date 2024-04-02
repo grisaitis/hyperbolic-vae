@@ -33,6 +33,8 @@ def train(
     beta: float,
     kl_loss_method: str,
     max_epochs: int,
+    last_activation: str,
+    loss_recon_method: str,
 ):
     input_data_shape = next(iter(data_module.train_dataloader()))[0].shape[1:]
     logger.info(f"input_data_shape from dataset: {input_data_shape}")
@@ -47,6 +49,8 @@ def train(
         beta=beta,
         kl_loss_method=kl_loss_method,
         activation_class=nn.GELU,
+        last_activation=last_activation,
+        loss_recon_method=loss_recon_method,
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if latent_curvature:
@@ -99,11 +103,22 @@ if __name__ == "__main__":
 
     pl.seed_everything(42)
 
-    jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset("sum_to_one")
-    # jerby_arnon_dataset = jerby_arnon.get_fake_dataset(100, 200, "sum_to_one")
-    # jerby_arnon_dataset = jerby_arnon.get_subset_jerby_arnon_dataset(7000, 10, "sum_to_one")
-    data_module = jerby_arnon.make_rnaseq_data_module(jerby_arnon_dataset, batch_size=64, num_workers=0)
-    # data_module = mnist_v2.make_data_module(batch_size=64, num_workers=0)
+    on_dataset = "jerby_arnon"
+    # on_dataset = "mnist"
+
+    if on_dataset == "mnist":
+        data_module = mnist_v2.make_data_module(batch_size=64, num_workers=0)
+        # last_activation, loss_recon = "none", "relaxed bernoulli"
+        # last_activation, loss_recon = "sigmoid", "binary_cross_entropy"
+        last_activation, loss_recon = "none", "binary_cross_entropy_with_logits"
+    elif on_dataset == "jerby_arnon":
+        # last_activation, loss_recon, rnaseq_normalize_method = "sigmoid", "relaxed bernoulli", "sum_to_million"
+        # last_activation, loss_recon, rnaseq_normalize_method = "softplus", "MSE", "sum_to_million"
+        last_activation, loss_recon, rnaseq_normalize_method = "none", "MSE", "z_score"
+        jerby_arnon_dataset = jerby_arnon.get_pytorch_dataset(rnaseq_normalize_method)
+        # jerby_arnon_dataset = jerby_arnon.get_fake_dataset(100, 200, "sum_to_one")
+        # jerby_arnon_dataset = jerby_arnon.get_subset_jerby_arnon_dataset(7000, 10, "sum_to_one")
+        data_module = jerby_arnon.make_rnaseq_data_module(jerby_arnon_dataset, batch_size=64, num_workers=0)
     with torch.autograd.detect_anomaly(check_nan=True):
         train(
             data_module=data_module,
@@ -114,4 +129,6 @@ if __name__ == "__main__":
             learning_rate=1e-3,
             kl_loss_method="logmap0_analytic",
             max_epochs=500,
+            last_activation=last_activation,
+            loss_recon_method=loss_recon,
         )

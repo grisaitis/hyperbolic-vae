@@ -27,6 +27,8 @@ class VAE(pl.LightningModule):
         beta: float,
         kl_loss_method: str,
         activation_class: type,
+        last_activation: str,
+        loss_recon_method: str,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -42,6 +44,8 @@ class VAE(pl.LightningModule):
         self.beta = beta
         self.kl_loss_method = kl_loss_method
         self.activation_class = activation_class
+        self.last_activation = last_activation
+        self.loss_recon_method = loss_recon_method
         self.input_features = input_size.numel()
         self.encoder = nn.Sequential(
             *self._make_encoder_first_ops(),
@@ -124,23 +128,41 @@ class VAE(pl.LightningModule):
         else:
             return nn.Linear(self.latent_dim, self.hidden_layer_dim)
 
-    def _make_decoder_last_ops(self) -> tuple[nn.Module]:
-        if len(self.input_size) == 1:
-            return (nn.Sigmoid(),)
+    def _make_decoder_last_ops(self) -> list[nn.Module]:
+        ops = []
+        if len(self.input_size) > 1:
+            ops.append(nn.Unflatten(1, self.input_size))
+        if self.last_activation == "none":
+            pass
+        elif self.last_activation == "sigmoid":
+            ops.append(nn.Sigmoid())
+        elif self.last_activation == "softplus":
+            ops.append(nn.Softplus())
         else:
-            return (
-                nn.Unflatten(1, self.input_size),
-                nn.Sigmoid(),
-            )
+            raise ValueError(f"Unrecognized last_activation: {self.last_activation}")
+        return ops
 
-    def loss_recon(self, x: torch.Tensor, output: torch.Tensor):
-        if x[0].numel() == 28 * 28:
-            logging.debug("loss function: MSE")
+    def loss_recon(self, x: torch.Tensor, output: torch.Tensor) -> torch.Tensor:
+        if self.loss_recon_method == "MSE":
             return torch.nn.functional.mse_loss(output, x, reduction="mean")
-        logging.debug("loss function: negative log likelihood of dirichlet")
-        # likelihood = torch.distributions.NegativeBinomial(total_count=1, probs=output)
-        likelihood = torch.distributions.RelaxedBernoulli(temperature=torch.Tensor([0.5]), probs=output)
-        return -likelihood.log_prob(x).mean()
+        if self.loss_recon_method == "binary_cross_entropy":
+            return torch.nn.functional.binary_cross_entropy(output, x, reduction="mean")
+        if self.loss_recon_method == "binary_cross_entropy_with_logits":
+            return torch.nn.functional.binary_cross_entropy_with_logits(output, x, reduction="mean")
+        if self.loss_recon_method == "relaxed bernoulli":
+            # temperature 0.5 is justified by Wang et al, 2020 "Relaxed Multivariate Bernoulli Distribution and Its Applications to Deep Generative Models"
+            temperature = torch.Tensor([0.3])
+            if self.last_activation == "none":
+                likelihood = torch.distributions.RelaxedBernoulli(temperature, logits=output)
+            elif self.last_activation == "sigmoid":
+                likelihood = torch.distributions.RelaxedBernoulli(temperature, probs=output)
+            else:
+                raise ValueError(f"last_activation {self.last_activation} not compatible with relaxed bernoulli")
+            return -likelihood.log_prob(x).mean()
+        elif self.loss_recon_method == "negative binomial":
+            raise NotImplementedError("this requires integer counts data")
+        else:
+            raise ValueError(f"Unrecognized loss_recon_method: {self.loss_recon_method}")
 
     def loss_kl_old(self, mu: torch.Tensor | geoopt.ManifoldTensor, scale: torch.Tensor) -> torch.Tensor:
         """
