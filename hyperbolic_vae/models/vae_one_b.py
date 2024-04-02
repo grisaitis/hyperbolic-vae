@@ -251,3 +251,18 @@ class VAE(pl.LightningModule):
         loss_dict = self.loss(batch)
         self.log_dict({f"test/{k}": v for k, v in loss_dict.items()})
         return loss_dict["loss_total"]
+
+    def transform_decoder_output(self, output: torch.Tensor) -> torch.Tensor:
+        if self.last_activation == "none" and self.loss_recon_method in (
+            "binary_cross_entropy",
+            "binary_cross_entropy_with_logits",
+            "relaxed bernoulli",
+        ):
+            return torch.nn.functional.sigmoid(output)
+        else:
+            return output
+
+    def reconstruct(self, x: torch.Tensor) -> torch.Tensor:
+        mu, scale, z, output = self.forward(x)
+        assert output.shape == x.shape, f"output.shape: {output.shape}, x.shape: {x.shape}"
+        return self.transform_decoder_output(output)

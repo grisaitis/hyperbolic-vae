@@ -212,7 +212,8 @@ class VisualizeVAEEuclideanLatentSpace(Callback):
                     z[0, 0] = torch.tensor(z1)
                     z[0, 1] = torch.tensor(z2)
                     # generate images
-                    img = pl_module.decoder(z)
+                    decoder_output = pl_module.decoder(z)
+                    img = pl_module.transform_decoder_output(decoder_output)
                     images.append(img)
         pl_module.train()
         return images
