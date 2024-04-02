@@ -29,6 +29,7 @@ def train(
     hidden_layer_dim: int,
     learning_rate: float,
     beta: float,
+    kl_loss_method: str,
     max_epochs: int,
 ):
     input_data_shape = next(iter(data_module.train_dataloader()))[0].shape[1:]
@@ -40,6 +41,7 @@ def train(
         latent_curvature=latent_curvature,
         learning_rate=learning_rate,
         beta=beta,
+        kl_loss_method=kl_loss_method,
         activation_class=nn.GELU,
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -105,6 +107,6 @@ if __name__ == "__main__":
             latent_curvature=1.0,
             hidden_layer_dim=200,  # default for PVAE was 100, 800 in demo
             learning_rate=1e-3,
-            beta=1.0,
-            max_epochs=100,
+            kl_loss_method="logmap0_analytic",
+            max_epochs=500,
         )
