@@ -231,6 +231,7 @@ class VisualizeVAEEuclideanValidationSetEncodings(Callback):
         self.range_x = range_x
         self.range_y = range_y
         self.every_n_epochs = every_n_epochs
+        logger.info("path_write_image: %s", path_write_image)
         self.path_write_image = path_write_image
 
     def on_train_epoch_start(self, trainer: Trainer, vae_experiment: pl.LightningModule) -> None:
