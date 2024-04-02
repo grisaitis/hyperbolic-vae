@@ -23,6 +23,7 @@ class VAE(pl.LightningModule):
         latent_curvature: float,
         learning_rate: float,
         beta: float,
+        kl_loss_method: str,
         activation_class: type,
     ):
         super().__init__()
@@ -35,6 +36,7 @@ class VAE(pl.LightningModule):
         self.latent_manifold = geoopt.PoincareBall(latent_curvature) if latent_curvature else None
         self.learning_rate = learning_rate
         self.beta = beta
+        self.kl_loss_method = kl_loss_method
         self.activation_class = activation_class
         self.input_features = input_size.numel()
         self.encoder = nn.Sequential(
@@ -200,11 +202,20 @@ class VAE(pl.LightningModule):
         logger.debug("kl divergence: %s", res)
         return res
 
+    def loss_kl(self, mu: torch.Tensor, scale: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+        if self.kl_loss_method == "logmap0_analytic":
+            return self.loss_kl_logmap0_analytic(mu, scale, z)
+        if self.kl_loss_method == "log_prob":
+            return self.loss_kl_log_prob(mu, scale, z)
+        if self.kl_loss_method == "logmap0_log_prob":
+            return self.loss_kl_logmap0_log_prob(mu, scale, z)
+        raise ValueError(f"Unrecognized kl_loss_method: {self.kl_loss_method}")
+
     def loss(self, batch: tuple) -> dict:
         x, class_labels = batch
         mu, scale, z, output = self.forward(x)
         loss_recon = self.loss_recon(x, output)
-        loss_kl = self.loss_kl_log_prob(mu, scale, z)
+        loss_kl = self.loss_kl(mu, scale, z)
         loss_total = loss_recon + self.beta * loss_kl
         logger.debug(
             "loss values:\n recon: %s\n  kl: %s\n  total: %s", loss_recon.item(), loss_kl.item(), loss_total.item()
