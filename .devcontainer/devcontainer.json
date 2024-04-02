@@ -15,7 +15,14 @@
 		"ghcr.io/devcontainers-contrib/features/vtop:2": {}
 	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+	"forwardPorts": [
+		6006
+	],
+	"portsAttributes": {
+		"6006": {
+			"label": "tensorboard"
+		}
+	},
 	"postCreateCommand": "./.devcontainer/postCreate.sh",
 	"customizations": {
 		"vscode": {
