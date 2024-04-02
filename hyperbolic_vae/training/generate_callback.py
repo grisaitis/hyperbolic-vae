@@ -27,8 +27,7 @@ class GenerateCallback(pl.Callback):
             with torch.no_grad():
                 pl_module.eval()
                 # reconst_imgs = pl_module(input_imgs)
-                mu, log_var, z, x_hat = pl_module(input_imgs)
-                reconst_imgs = x_hat
+                reconst_imgs = pl_module.reconstruct(input_imgs)
                 pl_module.train()
             # Plot and add to tensorboard
             imgs = torch.stack([input_imgs, reconst_imgs], dim=1).flatten(0, 1)
