@@ -52,7 +52,7 @@ Temporary Items
 *.icloud
 
 ### Nohup ###
-nohup.out
+nohup.out*
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
