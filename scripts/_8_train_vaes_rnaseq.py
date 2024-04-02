@@ -57,34 +57,27 @@ def train(
         latent_range = (-(latent_curvature**-0.5), latent_curvature**-0.5)
     else:
         latent_range = (-4, 4)
-    additional_callbacks = []
+    callbacks = [
+        ModelCheckpoint(save_weights_only=True, every_n_epochs=10),
+        LearningRateMonitor("epoch"),
+    ]
     is_image = input_data_shape == torch.Size([1, 28, 28])
     logger.info("is_image: %s", is_image)
     logger.info("input_data_shape[:2]: %s", input_data_shape[:2])
     logger.info("input_data_shape[:2] == (28, 28): %s", input_data_shape[:2] == (28, 28))
     if is_image:
         logger.info("Adding image callbacks")
-        additional_callbacks.append(GenerateCallback.from_data_module(data_module, every_n_epochs=1))
-        additional_callbacks.append(
+        callbacks.append(GenerateCallback.from_data_module(data_module, every_n_epochs=1))
+        callbacks.append(
             VisualizeVAEEuclideanLatentSpace(range_start=latent_range[0], range_end=latent_range[1], steps=21)
         )
-    viz_encodings_file_path = PROJECT_ROOT / "figures" / f"latent_space_{'mnist' if is_image else 'rnaseq'}.png"
-    additional_callbacks.append(
-        VisualizeEncodingsValidationSet(
-            path_write_image=viz_encodings_file_path, range_x=latent_range, range_y=latent_range
-        )
-    )
-    logger.info("viz_encodings_filename: %s", viz_encodings_file_path)
+    callbacks.append(VisualizeEncodingsValidationSet(latent_range, latent_range))
     trainer = pl.Trainer(
         default_root_dir=os.path.join(CHECKPOINTS_PATH, "vae_b_rnaseq"),
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         devices=1,
         max_epochs=max_epochs,
-        callbacks=[
-            ModelCheckpoint(save_weights_only=True, every_n_epochs=10),
-            LearningRateMonitor("epoch"),
-            *additional_callbacks,
-        ],
+        callbacks=callbacks,
     )
 
     trainer.logger._log_graph = True
