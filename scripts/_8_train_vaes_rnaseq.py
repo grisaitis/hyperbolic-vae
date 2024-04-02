@@ -119,7 +119,9 @@ if __name__ == "__main__":
             latent_curvature=1.0,
             prior_scale=2.0,
             posterior_scale="learned",
+            hidden_layer_dim=100,  # default for PVAE was 100, 800 in demo
             learning_rate=1e-3,
+            beta=0.5,
             kl_loss_method="logmap0_analytic",
             max_epochs=500,
             last_activation=last_activation,
